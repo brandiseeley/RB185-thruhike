@@ -8,8 +8,8 @@ module Database
   end
 end
 
-class NoHikeIdError < StandardError
-  def initialize(msg="Can't initialize new Point with Hike ID that doesn't exist")
+class NoMatchingPKError < StandardError
+  def initialize(msg="Can't initialize object with reference to Primary Key that isn't saved")
     super
   end
 end
@@ -19,18 +19,22 @@ class Hike
 
   attr_reader :id
 
-  def initialize(user_id, start_mileage, finish_mileage, name, completed)
+  def initialize(user, start_mileage, finish_mileage, name, completed)
     @storage = storage
-    @user_id = user_id
+    @user = user
     @start_mileage = start_mileage
     @finish_mileage = finish_mileage
     @name = name
     @completed = completed
-    @id = nil
   end
   
   def save
-    @id = @storage.insert_new_hike(@user_id, @start_mileage, @finish_mileage, @name, @completed) # create new Hike & return id
+    raise NoMatchingPKError.new("Can't initialize new Hike with User ID that doesn't exist") unless @user.id
+    @id = @storage.insert_new_hike(@user.id, 
+                                   @start_mileage, 
+                                   @finish_mileage, 
+                                   @name, 
+                                   @completed) # create new Hike & return id
     self
   end
 
@@ -47,11 +51,10 @@ class Point
     @hike = hike
     @mileage = mileage
     @date = date
-    @id = nil
   end
   
   def save
-    raise NoHikeIdError unless @hike.id
+    raise NoMatchingPKError.new("Can't initialize new Point with Hike ID that doesn't exist") unless @hike.id
     @id = @storage.insert_new_point(@hike.id, @mileage, @date)
     self
   end
@@ -71,7 +74,6 @@ class User
     @id = @storage.insert_new_user(@name) # create new User and return id
     self
   end
-
 end
 
 # Mile	Percent distance	Miles to go	Night	Percent time	Date	Day's miles
@@ -79,7 +81,7 @@ end
 # 15.7	 0.72%	   2178.6	  3	1.76%	    April 11, 2022	   7.6
 # 26.3	 1.20%	   2168	4	  2.35%	      April 12, 2022	   10.6
 brandi = User.new("Brandi").save
-appalachian = Hike.new(brandi.id, 0.0, 2193.0, "Appalachian Trail", false).save
+appalachian = Hike.new(brandi, 0.0, 2193.0, "Appalachian Trail", false).save
 appalachian.create_new_point(Date.new(2022, 4, 10), 8.1).save
 appalachian.create_new_point(Date.new(2022, 4, 11), 15.7).save
 
