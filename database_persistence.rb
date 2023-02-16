@@ -1,3 +1,4 @@
+# Direct interaction with Postgres Database via PG::Connection object
 class DatabasePersistence
   def initialize
     @database = PG.connect(dbname: "thruhike")
@@ -14,17 +15,17 @@ class DatabasePersistence
             VALUES
             ($1, $2, $3, $4, $5)
             RETURNING id
-          SQL
-    
+    SQL
+
     query(sql, user_id, start_mileage, finish_mileage, name, completed).values.flatten.first.to_i
   end
-  
+
   def insert_new_point(hike_id, mileage, date)
     sql = <<-SQL
-      INSERT INTO points
-      (hike_id, mileage, date)
-      VALUES
-      ($1, $2, $3)
+            INSERT INTO points
+            (hike_id, mileage, date)
+            VALUES
+            ($1, $2, $3)
     SQL
 
     query(sql, hike_id, mileage, date).values.flatten.first.to_i
@@ -37,8 +38,8 @@ class DatabasePersistence
             VALUES
             ($1)
             RETURNING id
-          SQL
-    
+    SQL
+
     query(sql, name).values.flatten.first.to_i
   end
 end
