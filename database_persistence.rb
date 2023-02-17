@@ -1,5 +1,7 @@
 # Direct interaction with Postgres Database via PG::Connection object
 class DatabasePersistence
+  # Note: Scalar queries should return appropriate values, float, int, etc
+  #       Non-scalar queries should return raw PG::Result object
   def initialize
     @database = PG.connect(dbname: "thruhike")
   end
@@ -14,7 +16,7 @@ class DatabasePersistence
             (user_id, start_mileage, finish_mileage, name, completed)
             VALUES
             ($1, $2, $3, $4, $5)
-            RETURNING id
+            RETURNING id;
     SQL
 
     query(sql, user_id, start_mileage, finish_mileage, name, completed).values.flatten.first.to_i
@@ -25,7 +27,7 @@ class DatabasePersistence
             INSERT INTO points
             (hike_id, mileage, date)
             VALUES
-            ($1, $2, $3)
+            ($1, $2, $3);
     SQL
 
     query(sql, hike_id, mileage, date).values.flatten.first.to_i
@@ -37,7 +39,7 @@ class DatabasePersistence
             (name, user_name)
             VALUES
             ($1, $2)
-            RETURNING id
+            RETURNING id;
     SQL
 
     query(sql, name, user_name).values.flatten.first.to_i
@@ -66,6 +68,15 @@ class DatabasePersistence
     SQL
     result = query(sql, hike_id)
     scalar_query_to_float(result)
+  end
+
+  def all_users
+    query("SELECT * FROM users;")
+  end
+
+  def one_user(user_name)
+    sql = "SELECT * FROM users WHERE user_name = $1"
+    query(sql, user_name)
   end
 
   private

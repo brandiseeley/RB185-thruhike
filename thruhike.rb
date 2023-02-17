@@ -81,30 +81,38 @@ end
 class User
   include Database
 
-  attr_reader :id
+  attr_reader :id, :name, :user_name
 
-  def initialize(name, user_name)
+  # TODO: The way id works now, if we resave a user, they will get a new id and the older user will be left
+  def initialize(name, user_name, id = nil)
     @storage = storage
     @name = name
-    @user_name = name
+    @user_name = user_name
+    @id = id
   end
 
   def save
     @id = @storage.insert_new_user(@name, @user_name) # create new User and return id
     self
   end
+
+  def to_s
+    "name: #{@name}, user_name: #{@user_name}, id: #{id}"
+  end
 end
 
-# Reminder : test_thruhike.rb will fail if these tests aren't commented out
+# # Reminder : test_thruhike.rb will fail if these tests aren't commented out
 # Testable.reset_database
 
-# brandi = User.new("Brandi").save
+# brandi = User.new("Brandi", "brandi_s").save
 # appalachian = Hike.new(brandi, 0.0, 2194.3, "Appalachian Trail", false).save
 # appalachian.create_new_point(Date.new(2022, 4, 10), 8.1).save
 # appalachian.create_new_point(Date.new(2022, 4, 11), 15.7).save
 # appalachian.create_new_point(Date.new(2022, 4, 12), 26.3).save
 # appalachian.create_new_point(Date.new(2022, 4, 13), 32.4).save
 # appalachian.create_new_point(Date.new(2022, 4, 14), 42.8).save
+
+# olivier = User.new("Olivier", "ochatot").save
 
 # p appalachian.average_mileage_per_day # => 8.56
 # p appalachian.mileage_from_finish
