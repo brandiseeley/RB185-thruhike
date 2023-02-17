@@ -1,6 +1,9 @@
 require "pg"
 
 require_relative "database_persistence"
+require_relative "testable"
+
+include Testable
 
 # Provides DatabasePersistence object to classes
 module Database
@@ -45,6 +48,14 @@ class Hike
   def create_new_point(date, mileage)
     Point.new(self, mileage, date)
   end
+
+  def average_mileage_per_day
+    @storage.average_mileage_per_day(id)
+  end
+
+  def distance_from_finish
+
+  end
 end
 
 # Creates Point objects that can be saved to database, dependent on having Hike object
@@ -82,3 +93,17 @@ class User
     self
   end
 end
+
+
+# Reminder : test_thruhike.rb will fail if these tests aren't commented out
+# Testable.reset_database
+
+# brandi = User.new("Brandi").save
+# appalachian = Hike.new(brandi, 0.0, 2193.0, "Appalachian Trail", false).save
+# appalachian.create_new_point(Date.new(2022, 4, 10), 8.1).save
+# appalachian.create_new_point(Date.new(2022, 4, 11), 15.7).save
+# appalachian.create_new_point(Date.new(2022, 4, 12), 26.3).save
+# appalachian.create_new_point(Date.new(2022, 4, 13), 32.4).save
+# appalachian.create_new_point(Date.new(2022, 4, 14), 42.8).save
+
+# p appalachian.average_mileage_per_day # => 8.56

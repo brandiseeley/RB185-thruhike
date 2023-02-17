@@ -6,7 +6,8 @@ Minitest::Reporters.use!
 require_relative "../thruhike"
 require_relative "../database_persistence"
 
-class ThruHikeTest < Minitest::Test
+class ThruHikeTest < MiniTest::Test
+
   def setup
     # Database setup
     @database = PG.connect(dbname: "test_thruhike")
