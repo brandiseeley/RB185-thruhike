@@ -53,8 +53,8 @@ class Hike
     @storage.average_mileage_per_day(id)
   end
 
-  def distance_from_finish
-
+  def mileage_from_finish
+    @storage.mileage_from_finish(id)
   end
 end
 
@@ -94,12 +94,11 @@ class User
   end
 end
 
-
 # Reminder : test_thruhike.rb will fail if these tests aren't commented out
 # Testable.reset_database
 
 # brandi = User.new("Brandi").save
-# appalachian = Hike.new(brandi, 0.0, 2193.0, "Appalachian Trail", false).save
+# appalachian = Hike.new(brandi, 0.0, 2194.3, "Appalachian Trail", false).save
 # appalachian.create_new_point(Date.new(2022, 4, 10), 8.1).save
 # appalachian.create_new_point(Date.new(2022, 4, 11), 15.7).save
 # appalachian.create_new_point(Date.new(2022, 4, 12), 26.3).save
@@ -107,3 +106,4 @@ end
 # appalachian.create_new_point(Date.new(2022, 4, 14), 42.8).save
 
 # p appalachian.average_mileage_per_day # => 8.56
+# p appalachian.mileage_from_finish

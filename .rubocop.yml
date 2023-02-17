@@ -1,0 +1,12 @@
+AllCops:
+  DisplayCopNames: true
+  ExtraDetails: true
+  DisplayStyleGuide: true
+  StyleGuideBaseURL: https://rubystyle.guide/
+  TargetRubyVersion: 2.7
+
+Style/StringLiterals:
+  Enabled: false
+
+Style/FrozenStringLiteralComment:
+  Enabled: false
