@@ -9,8 +9,23 @@ GEM
       builder
       minitest (>= 5.0)
       ruby-progressbar
+    mustermann (3.0.0)
+      ruby2_keywords (~> 0.0.1)
+    nio4r (2.5.8)
     pg (1.4.5)
+    puma (6.1.0)
+      nio4r (~> 2.0)
+    rack (2.2.6.2)
+    rack-protection (3.0.5)
+      rack
     ruby-progressbar (1.11.0)
+    ruby2_keywords (0.0.5)
+    sinatra (3.0.5)
+      mustermann (~> 3.0)
+      rack (~> 2.2, >= 2.2.4)
+      rack-protection (= 3.0.5)
+      tilt (~> 2.0)
+    tilt (2.0.11)
 
 PLATFORMS
   x86_64-linux
@@ -19,6 +34,8 @@ DEPENDENCIES
   minitest (~> 5.10)
   minitest-reporters (~> 1.1)
   pg
+  puma
+  sinatra
 
 RUBY VERSION
    ruby 3.1.3p185

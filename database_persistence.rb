@@ -31,16 +31,16 @@ class DatabasePersistence
     query(sql, hike_id, mileage, date).values.flatten.first.to_i
   end
 
-  def insert_new_user(name)
+  def insert_new_user(name, user_name)
     sql = <<-SQL
             INSERT INTO users
-            (name)
+            (name, user_name)
             VALUES
-            ($1)
+            ($1, $2)
             RETURNING id
     SQL
 
-    query(sql, name).values.flatten.first.to_i
+    query(sql, name, user_name).values.flatten.first.to_i
   end
 
   def average_mileage_per_day(hike_id)

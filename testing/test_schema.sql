@@ -4,7 +4,8 @@ DROP TABLE IF EXISTS users;
 
 CREATE TABLE users (
   id serial PRIMARY KEY,
-  name text NOT NULL
+  name text NOT NULL,
+  user_name text UNIQUE NOT NULL
 );
 
 CREATE TABLE hikes (

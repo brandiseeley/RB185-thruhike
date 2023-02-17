@@ -83,13 +83,14 @@ class User
 
   attr_reader :id
 
-  def initialize(name)
+  def initialize(name, user_name)
     @storage = storage
     @name = name
+    @user_name = name
   end
 
   def save
-    @id = @storage.insert_new_user(@name) # create new User and return id
+    @id = @storage.insert_new_user(@name, @user_name) # create new User and return id
     self
   end
 end
