@@ -6,6 +6,7 @@ Minitest::Reporters.use!
 
 require_relative "../thruhike"
 require_relative "../database_persistence"
+require_relative "../model_manager"
 
 # Have to override initialize for DatabasePersistence so we connect to test database
 class DatabasePersistence
@@ -21,6 +22,8 @@ class ThruHikeTest < MiniTest::Test
     database = PG.connect(dbname: "test_thruhike")
     schema_sql = File.open("test_schema.sql", &:read)
     database.exec(schema_sql)
+
+    @manager = ModelManager.new
 
     @user1 = User.new("User One", "user_one_1").save
     @incomplete_hike_zero_start = Hike.new(@user1, 0.0, 2194.3, "Incomplete Hike Zero Start", false).save
@@ -75,5 +78,27 @@ class ThruHikeTest < MiniTest::Test
     @incomplete_hike_zero_start.create_new_point(Date.new(2022, 4, 14), 42.8).save
 
     assert_equal(2151.5, @incomplete_hike_zero_start.mileage_from_finish)
+  end
+
+  # Test Model Manager
+  def test_one_user
+    constructed_first_user = @manager.one_user(1)
+    assert_equal(@user1, constructed_first_user)
+  end
+
+  def test_all_users
+    constructed_users = @manager.all_users
+    manual_users = [@user1, @user2].sort
+    assert_equal(manual_users, constructed_users)
+  end
+
+  def test_all_hikes_from_user
+    constructed_hike = @manager.all_hikes_from_user(1)
+    manual_hike = [@incomplete_hike_zero_start]
+    assert_equal(constructed_hike, manual_hike)
+
+    constructed_hikes = @manager.all_hikes_from_user(2)
+    manual_hikes = [@complete_hike_non_zero_start, @second_hike_incomplete].sort
+    assert_equal(manual_hikes, constructed_hikes)
   end
 end

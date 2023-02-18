@@ -11,7 +11,7 @@ class ModelManager
   def all_users
     @database.all_users.map do |user_data|
       construct_user(user_data)
-    end
+    end.sort
   end
 
   def one_user(user_id)
@@ -22,9 +22,8 @@ class ModelManager
   def all_hikes_from_user(user_id)
     hikes = @database.all_hikes_from_user(user_id)
     hikes.map do |hike_data|
-      puts hike_data
       construct_hike(hike_data)
-    end
+    end.sort
   end
 
   private
@@ -36,7 +35,9 @@ class ModelManager
   end
 
   def construct_hike(row)
-    Hike.new(row["user_id"].to_i,
+    user_id = row["user_id"].to_i
+    user = one_user(user_id)
+    Hike.new(user,
              row["start_mileage"].to_f,
              row["finish_mileage"].to_f,
              row["name"],

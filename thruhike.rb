@@ -23,7 +23,7 @@ end
 class Hike
   include Database
 
-  attr_reader :id, :name, :start_mileage, :finish_mileage
+  attr_reader :user, :start_mileage, :finish_mileage, :name, :completed, :id
 
   def initialize(user_object, start_mileage, finish_mileage, name, completed, id = nil)
     @storage = storage
@@ -63,15 +63,31 @@ class Hike
   def mileage_from_finish
     @storage.mileage_from_finish(id)
   end
+
+  def ==(other)
+    user == other.user &&
+      start_mileage == other.start_mileage &&
+      finish_mileage == other.finish_mileage &&
+      name == other.name &&
+      completed == other.completed &&
+      id == other.id
+  end
+
+  def <=>(other)
+    name <=> other.name
+  end
 end
 
 # Creates Point objects that can be saved to database, dependent on having Hike object
 class Point
   include Database
 
-  def initialize(hike, mileage, date)
+  attr_reader :hike, :mileage, :date
+
+  def initialize(hike_object, mileage, date)
     @storage = storage
-    @hike = hike
+
+    @hike = hike_object
     @mileage = mileage
     @date = date
   end
@@ -82,17 +98,28 @@ class Point
     @id = @storage.insert_new_point(@hike.id, @mileage, @date)
     self
   end
+
+  def ==(other)
+    hike == other.hike &&
+      mileage == other.mileage &&
+      date == other.date
+  end
+
+  def <=>(other)
+    date <=> other.date
+  end
 end
 
 # Creates User objects that can be saved to database
 class User
   include Database
 
-  attr_reader :id, :name, :user_name
+  attr_reader :name, :user_name, :id
 
   # TODO: The way id works now, if we resave a user, they will get a new id and the older user will be left
   def initialize(name, user_name, id = nil)
     @storage = storage
+
     @name = name
     @user_name = user_name
     @id = id
@@ -106,7 +133,17 @@ class User
   def to_s
     "name: #{@name}, user_name: #{@user_name}, id: #{id}"
   end
+
+  def ==(other)
+    name == other.name &&
+      user_name == other.user_name &&
+      id == other.id
+  end
+
+  def <=>(other)
+    name <=> other.name
+  end
 end
 
-Testable.reset_database
-Testable.insert_test_data
+# Testable.reset_database
+# Testable.insert_test_data
