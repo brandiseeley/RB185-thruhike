@@ -1,7 +1,6 @@
 require "minitest/autorun"
 require "minitest/reporters"
 require "pg"
-require "pry"
 Minitest::Reporters.use!
 
 require_relative "../thruhike"
@@ -81,15 +80,15 @@ class ThruHikeTest < MiniTest::Test
   end
 
   # Test Model Manager
-  def test_one_user
-    constructed_first_user = @manager.one_user(1)
-    assert_equal(@user1, constructed_first_user)
-  end
-
   def test_all_users
     constructed_users = @manager.all_users
     manual_users = [@user1, @user2].sort
     assert_equal(manual_users, constructed_users)
+  end
+
+  def test_one_user
+    constructed_first_user = @manager.one_user(1)
+    assert_equal(@user1, constructed_first_user)
   end
 
   def test_all_hikes_from_user

@@ -1,7 +1,9 @@
 # Direct interaction with Postgres Database via PG::Connection object
+# Shouldn't be concerned with validation, should only insert/query/delete
 class DatabasePersistence
   # Note: Scalar queries should return appropriate values, float, int, etc
-  #       Non-scalar queries should return raw PG::Result object
+  #       Multi-row queries should return raw PG::Result object
+  #       Single-row queries should return single row values
   def initialize
     @database = PG.connect(dbname: "thruhike")
   end

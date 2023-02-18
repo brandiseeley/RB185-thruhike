@@ -16,6 +16,10 @@ def logged_in_user
   @manager.one_user(user_id)
 end
 
+def logged_in?
+  session[:user_id]
+end
+
 before do
   @manager = ModelManager.new
 end
@@ -27,20 +31,20 @@ end
 
 post "/hikes" do
   user_id = params["user_id"]
-  # TODO: Login Validation
   session[:user_id] = user_id
+  # TODO: validate user exists
   redirect "/hikes"
 end
 
 get "/hikes" do
+  redirect "/" unless logged_in?
   @user = logged_in_user
   @hikes = @manager.all_hikes_from_user(@user.id)
   erb :hikes
 end
 
 get "/hikes/:hike_id" do
-  puts "Here's the session user id!"
-  puts session[:user_id]
+  redirect "/" unless logged_in?
   hike_id = params["hike_id"].to_i
   @user = logged_in_user
   @hike = @manager.one_hike(hike_id)
