@@ -8,7 +8,7 @@ class ModelManager
     @database = DatabasePersistence.new
   end
 
-  # returns array of User objects
+  # Fetching methods
   def all_users
     @database.all_users.map do |user_data|
       construct_user(user_data)
@@ -37,8 +37,38 @@ class ModelManager
     points_data = @database.all_points_from_hike(hike_id)
     points_data.map do |point_data|
       construct_point(point_data, hike_object)
-    end
+    end.sort
   end
+
+  # Statistic Methods
+  def average_mileage_per_day(hike_id)
+    @database.average_mileage_per_day(hike_id)
+  end
+
+  def mileage_from_finish(hike_id)
+    @database.mileage_from_finish(hike_id)
+  end
+
+  # Inserting/Altering Methods
+  def mark_hike_complete(hike_id)
+    @database.mark_hike_complete(hike_id)
+  end
+
+  # Returns id assigned by database
+  def insert_new_hike(user_id, start_mileage, finish_mileage, name, completed)
+    @database.insert_new_hike(user_id, start_mileage, finish_mileage, name, completed)
+  end
+
+  # Returns id assigned by database
+  def insert_new_point(hike_id, mileage, date)
+    @database.insert_new_point(hike_id, mileage, date)
+  end
+
+  # Returns id assigned by database
+  def insert_new_user(name, user_name)
+    @database.insert_new_user(name, user_name)
+  end
+
 
   private
 
@@ -62,6 +92,6 @@ class ModelManager
   def construct_point(row, hike)
     Point.new(hike,
               row["mileage"].to_f,
-              row["date"])
+              DateTime.parse(row["date"]).to_date)
   end
 end
