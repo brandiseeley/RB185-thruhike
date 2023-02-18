@@ -20,9 +20,17 @@ get "/" do
   erb :home
 end
 
+post "/hikes" do
+  user_id = params["user_id"]
+  # TODO: Login Validation
+  session[:user_id] = user_id
+  redirect "/hikes"
+end
+
 get "/hikes" do
-  user_name = params["user"]
-  session[:user] = user_name
-  @user = @manager.one_user(user_name)
+  user_id = session[:user_id]
+  @user = @manager.one_user(user_id)
+  # TODO : Partition hikes into active hikes and completed hikes
+  @hikes = @manager.all_hikes_from_user(user_id)
   erb :hikes
 end
