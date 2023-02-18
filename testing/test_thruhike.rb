@@ -48,6 +48,19 @@ class ThruHikeTest < MiniTest::Test
     @second_hike_incomplete.create_new_point(9.3, Date.new(2023, 1, 13))
   end
 
+  def teardown
+    sql = <<-SQL
+          SELECT pg_terminate_backend(pg_stat_activity.pid)
+          FROM pg_stat_activity
+          WHERE pg_stat_activity.datname = 'test_thruhike'
+          AND pid <> pg_backend_pid();
+    SQL
+
+    database = PG.connect(dbname: "test_thruhike")
+    database.exec(sql)
+
+  end
+
   def test_adding_point_to_unsaved_hike
     @unsaved_hike = Hike.new(@user1, 0, 100, "test hike", false)
     point = @unsaved_hike.create_new_point(11.1, Date.new)
@@ -115,5 +128,11 @@ class ThruHikeTest < MiniTest::Test
     constructed_points = @manager.all_points_from_hike(1)
 
     assert_equal(manual_points, constructed_points)
+  end
+
+  def test_mark_complete
+    assert_equal(false, @incomplete_hike_zero_start.completed)
+    @incomplete_hike_zero_start.mark_complete
+    assert_equal(true, @incomplete_hike_zero_start.completed)
   end
 end
