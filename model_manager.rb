@@ -14,15 +14,33 @@ class ModelManager
     end
   end
 
-  def one_user(user_name)
-    user = @database.one_user(user_name).first
+  def one_user(user_id)
+    user = @database.one_user(user_id).first
     construct_user(user)
+  end
+
+  def all_hikes_from_user(user_id)
+    hikes = @database.all_hikes_from_user(user_id)
+    hikes.map do |hike_data|
+      puts hike_data
+      construct_hike(hike_data)
+    end
   end
 
   private
 
-  # ["1", "Brandi", "brandi_s"]
   def construct_user(row)
-    User.new(row["name"], row["user_name"], row["id"].to_i)
+    User.new(row["name"],
+             row["user_name"],
+             row["id"].to_i)
+  end
+
+  def construct_hike(row)
+    Hike.new(row["user_id"].to_i,
+             row["start_mileage"].to_f,
+             row["finish_mileage"].to_f,
+             row["name"],
+             row["completed"] == "t",
+             row["id"].to_i)
   end
 end

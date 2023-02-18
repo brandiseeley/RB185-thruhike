@@ -1,7 +1,7 @@
 require "pg"
 
 require_relative "database_persistence"
-require_relative "testable"
+require_relative "testing/testable"
 
 include Testable
 
@@ -23,15 +23,17 @@ end
 class Hike
   include Database
 
-  attr_reader :id
+  attr_reader :id, :name, :start_mileage, :finish_mileage
 
-  def initialize(user, start_mileage, finish_mileage, name, completed)
+  def initialize(user_object, start_mileage, finish_mileage, name, completed, id = nil)
     @storage = storage
-    @user = user
+
+    @user = user_object
     @start_mileage = start_mileage
     @finish_mileage = finish_mileage
     @name = name
     @completed = completed
+    @id = id
   end
 
   def save
@@ -47,6 +49,11 @@ class Hike
 
   def create_new_point(date, mileage)
     Point.new(self, mileage, date)
+  end
+
+  def mark_complete
+    @completed = true
+    @storage.mark_hike_complete(id)
   end
 
   def average_mileage_per_day
@@ -101,18 +108,5 @@ class User
   end
 end
 
-# # Reminder : test_thruhike.rb will fail if these tests aren't commented out
-# Testable.reset_database
-
-# brandi = User.new("Brandi", "brandi_s").save
-# appalachian = Hike.new(brandi, 0.0, 2194.3, "Appalachian Trail", false).save
-# appalachian.create_new_point(Date.new(2022, 4, 10), 8.1).save
-# appalachian.create_new_point(Date.new(2022, 4, 11), 15.7).save
-# appalachian.create_new_point(Date.new(2022, 4, 12), 26.3).save
-# appalachian.create_new_point(Date.new(2022, 4, 13), 32.4).save
-# appalachian.create_new_point(Date.new(2022, 4, 14), 42.8).save
-
-# olivier = User.new("Olivier", "ochatot").save
-
-# p appalachian.average_mileage_per_day # => 8.56
-# p appalachian.mileage_from_finish
+Testable.reset_database
+Testable.insert_test_data
