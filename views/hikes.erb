@@ -14,13 +14,22 @@
     <div>
       <h2><%= @user.name %>'s Hikes</h2>
       <ul>
+
       <% @hikes.each do |hike| %>
-        <li><%= hike.name %></li>
+
+        <li>
+          <form action="/hikes/<%= hike.id %>" method="get">
+            <input type="submit" value="<%= hike.name %>">
+          </form>
+        </li>
+
           <ul>
             <li>Start Mileage: <%= hike.start_mileage %></li>
             <li>Finish Mileage: <%= hike.finish_mileage %></li>
           </ul>
+
       <% end %>
+
       <ul>
     </div>
 

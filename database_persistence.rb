@@ -84,6 +84,16 @@ class DatabasePersistence
     query(sql, user_id)
   end
 
+  def one_hike(hike_id)
+    sql = "SELECT * FROM hikes WHERE hikes.id = $1"
+    query(sql, hike_id).first
+  end
+
+  def all_points_from_hike(hike_id)
+    sql = "SELECT * FROM points WHERE hike_id = $1"
+    query(sql, hike_id)
+  end
+
   def mark_hike_complete(hike_id)
     sql = "UPDATE hikes SET completed = true WHERE id = $1"
     query(sql, hike_id)

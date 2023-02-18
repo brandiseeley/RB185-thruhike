@@ -144,6 +144,3 @@ class User
     name <=> other.name
   end
 end
-
-# Testable.reset_database
-# Testable.insert_test_data

@@ -11,6 +11,11 @@ configure do
   also_reload "database_persistence.rb", "model_manager.rb", "thruhike.rb"
 end
 
+def logged_in_user
+  user_id = session[:user_id]
+  @manager.one_user(user_id)
+end
+
 before do
   @manager = ModelManager.new
 end
@@ -28,9 +33,17 @@ post "/hikes" do
 end
 
 get "/hikes" do
-  user_id = session[:user_id]
-  @user = @manager.one_user(user_id)
-  # TODO : Partition hikes into active hikes and completed hikes
-  @hikes = @manager.all_hikes_from_user(user_id)
+  @user = logged_in_user
+  @hikes = @manager.all_hikes_from_user(@user.id)
   erb :hikes
+end
+
+get "/hikes/:hike_id" do
+  puts "Here's the session user id!"
+  puts session[:user_id]
+  hike_id = params["hike_id"].to_i
+  @user = logged_in_user
+  @hike = @manager.one_hike(hike_id)
+  @points = @manager.all_points_from_hike(hike_id)
+  erb :hike
 end

@@ -1,5 +1,6 @@
 require_relative "thruhike"
 require_relative "database_persistence"
+require "pry-byebug"
 
 # Uses values returned from DatabasePersistence, returns constructed objects
 class ModelManager
@@ -26,6 +27,19 @@ class ModelManager
     end.sort
   end
 
+  def one_hike(hike_id)
+    hike_data = @database.one_hike(hike_id)
+    construct_hike(hike_data)
+  end
+
+  def all_points_from_hike(hike_id)
+    hike_object = one_hike(hike_id)
+    points_data = @database.all_points_from_hike(hike_id)
+    points_data.map do |point_data|
+      construct_point(point_data, hike_object)
+    end
+  end
+
   private
 
   def construct_user(row)
@@ -43,5 +57,11 @@ class ModelManager
              row["name"],
              row["completed"] == "t",
              row["id"].to_i)
+  end
+
+  def construct_point(row, hike)
+    Point.new(hike,
+              row["mileage"].to_f,
+              row["date"])
   end
 end

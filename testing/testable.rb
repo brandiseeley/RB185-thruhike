@@ -28,8 +28,8 @@ module Testable
     @complete_hike_non_zero_start.mark_complete
 
     @second_hike_incomplete = Hike.new(@user2, 0.0, 30.0, "Short Hike Incomplete", false).save
-    @second_hike_incomplete.create_new_point(Date.new(2023, 1, 12), 4.2)
-    @second_hike_incomplete.create_new_point(Date.new(2023, 1, 13), 9.3)
+    @second_hike_incomplete.create_new_point(Date.new(2023, 1, 12), 4.2).save
+    @second_hike_incomplete.create_new_point(Date.new(2023, 1, 13), 9.3).save
   end
 end
 

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title><%= @hike.name %></title>
+    <meta charset="utf-8">
+  </head>
+  <body>
+
+    <div>
+      <h1><%= @hike.name %></h2>
+      <ul>
+
+      <% @points.each do |point| %>
+
+        <ul>
+          <li>Date: <%= point.date %></li>
+          <li>Mileage: <%= point.mileage %></li>
+        </ul>
+
+      <% end %>
+
+      <ul>
+    </div>
+
+  </body>
+</html>
