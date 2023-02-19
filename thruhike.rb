@@ -104,7 +104,7 @@ class Point
   end
 
   def <=>(other)
-    date <=> other.date
+    other.date <=> date
   end
 
   def to_s

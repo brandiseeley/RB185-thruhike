@@ -2,15 +2,16 @@ require "pry-byebug"
 # Direct interaction with Postgres Database via PG::Connection object
 # Shouldn't be concerned with validation, should only insert/query/delete
 class DatabasePersistence
+  @@database = PG.connect(dbname: "thruhike")
+
   def initialize
     puts "INITIALIZING NEW CONNECTION"
-    @database = PG.connect(dbname: "thruhike")
   end
 
   def query(statement, *params)
     # binding.pry
     begin
-      data = @database.exec_params(statement, params)
+      data = @@database.exec_params(statement, params)
     rescue PG::UniqueViolation => error
       return LogStatus.new(false, error.message)
     rescue PG::CheckViolation => error
