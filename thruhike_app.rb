@@ -13,7 +13,8 @@ end
 
 def logged_in_user
   user_id = session[:user_id]
-  @manager.one_user(user_id)
+  # TODO : Handle bad status
+  @manager.one_user(user_id).data
 end
 
 def logged_in?
@@ -25,7 +26,8 @@ before do
 end
 
 get "/" do
-  @users = @manager.all_users
+  # TODO : Handle bad status
+  @users = @manager.all_users.data
   erb :home
 end
 
@@ -39,7 +41,8 @@ end
 get "/hikes" do
   redirect "/" unless logged_in?
   @user = logged_in_user
-  @hikes = @manager.all_hikes_from_user(@user.id)
+  # TODO : Handle bad status
+  @hikes = @manager.all_hikes_from_user(@user.id).data
   erb :hikes
 end
 
@@ -47,7 +50,8 @@ get "/hikes/:hike_id" do
   redirect "/" unless logged_in?
   hike_id = params["hike_id"].to_i
   @user = logged_in_user
-  @hike = @manager.one_hike(hike_id)
-  @points = @manager.all_points_from_hike(hike_id)
+  # TODO : Handle bad status
+  @hike = @manager.one_hike(hike_id).data
+  @points = @manager.all_points_from_hike(hike_id).data
   erb :hike
 end
