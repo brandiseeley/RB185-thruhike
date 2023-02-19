@@ -5,13 +5,6 @@ require_relative "testing/testable"
 
 include Testable
 
-# Provide ModuleManager instance to each class
-module Managable
-  def manager
-    ModelManager.new
-  end
-end
-
 # Error thrown when Dependent object hasn't been saved. Ex: Create Hike without saved User
 class NoMatchingPKError < StandardError
   def initialize(msg = "Can't initialize object with reference to Primary Key that isn't saved")
@@ -22,12 +15,11 @@ end
 # Creates Hike objects that can be saved to database, dependent on having User object
 class Hike
   include Managable
+  @@manager = ModelManager.new
 
   attr_reader :user, :start_mileage, :finish_mileage, :name, :completed, :id
 
   def initialize(user_object, start_mileage, finish_mileage, name, completed, id = nil)
-    @manager = manager
-
     @user = user_object
     @start_mileage = start_mileage
     @finish_mileage = finish_mileage
@@ -40,7 +32,7 @@ class Hike
     # ??? Is this validation happening where we want it?
     raise(NoMatchingPKError, "Can't initialize new Hike with User ID that doesn't exist") unless @user.id
 
-    status = @manager.insert_new_hike(@user.id,
+    status = @@manager.insert_new_hike(@user.id,
                                       @start_mileage,
                                       @finish_mileage,
                                       @name,
@@ -57,15 +49,15 @@ class Hike
 
   def mark_complete
     @completed = true
-    @manager.mark_hike_complete(id)
+    @@manager.mark_hike_complete(id)
   end
 
   def average_mileage_per_day
-    @manager.average_mileage_per_day(id)
+    @@manager.average_mileage_per_day(id)
   end
 
   def mileage_from_finish
-    @manager.mileage_from_finish(id)
+    @@manager.mileage_from_finish(id)
   end
 
   def ==(other)
@@ -85,12 +77,11 @@ end
 # Creates Point objects that can be saved to database, dependent on having Hike object
 class Point
   include Managable
+  @@manager = ModelManager.new
 
   attr_reader :hike, :mileage, :date
 
   def initialize(hike_object, mileage, date)
-    @manager = manager
-
     @hike = hike_object
     @mileage = mileage
     @date = date
@@ -99,7 +90,7 @@ class Point
   def save
     raise(NoMatchingPKError, "Can't initialize new Point with Hike ID that doesn't exist") unless @hike.id
 
-    status = @manager.insert_new_point(@hike.id, @mileage, @date)
+    status = @@manager.insert_new_point(@hike.id, @mileage, @date)
     if status.success
       @id = status.data
     end
@@ -124,20 +115,19 @@ end
 # Creates User objects that can be saved to database
 class User
   include Managable
+  @@manager = ModelManager.new
 
   attr_reader :name, :user_name, :id
 
   # TODO: The way id works now, if we resave a user, they will get a new id and the older user will be left
   def initialize(name, user_name, id = nil)
-    @manager = manager
-
     @name = name
     @user_name = user_name
     @id = id
   end
 
   def save
-    status = @manager.insert_new_user(@name, @user_name)
+    status = @@manager.insert_new_user(@name, @user_name)
     if status.success
       @id = status.data
     end
