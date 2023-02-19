@@ -74,50 +74,50 @@ class ThruHikeTest < MiniTest::Test
   end
 
   def test_average_mileage_per_day
-    assert_equal(7.85, @incomplete_hike_zero_start.average_mileage_per_day)
+    assert_equal(7.85, @incomplete_hike_zero_start.average_mileage_per_day.data)
 
     @incomplete_hike_zero_start.create_new_point(26.3, Date.new(2022, 4, 12)).save
     @incomplete_hike_zero_start.create_new_point(32.4, Date.new(2022, 4, 13)).save
     @incomplete_hike_zero_start.create_new_point(42.8, Date.new(2022, 4, 14)).save
-    assert_equal(8.56, @incomplete_hike_zero_start.average_mileage_per_day)
+    assert_equal(8.56, @incomplete_hike_zero_start.average_mileage_per_day.data)
   end
 
   def test_mileage_to_finish
-    assert_equal(2178.6, @incomplete_hike_zero_start.mileage_from_finish)
+    assert_equal(2178.6, @incomplete_hike_zero_start.mileage_from_finish.data)
 
     @incomplete_hike_zero_start.create_new_point(26.3, Date.new(2022, 4, 12)).save
     @incomplete_hike_zero_start.create_new_point(32.4, Date.new(2022, 4, 13)).save
     @incomplete_hike_zero_start.create_new_point(42.8, Date.new(2022, 4, 14)).save
 
-    assert_equal(2151.5, @incomplete_hike_zero_start.mileage_from_finish)
+    assert_equal(2151.5, @incomplete_hike_zero_start.mileage_from_finish.data)
   end
 
   # Test Model Manager
   def test_all_users
-    constructed_users = @manager.all_users
+    constructed_users = @manager.all_users.data
     manual_users = [@user1, @user2].sort
     assert_equal(manual_users, constructed_users)
   end
 
   def test_one_user
-    constructed_first_user = @manager.one_user(1)
+    constructed_first_user = @manager.one_user(1).data
     assert_equal(@user1, constructed_first_user)
   end
 
   def test_all_hikes_from_user
-    constructed_hike = @manager.all_hikes_from_user(1)
+    constructed_hike = @manager.all_hikes_from_user(1).data
     manual_hike = [@incomplete_hike_zero_start]
-    assert_equal(constructed_hike, manual_hike)
+    assert_equal(manual_hike, constructed_hike)
 
-    constructed_hikes = @manager.all_hikes_from_user(2)
+    constructed_hikes = @manager.all_hikes_from_user(2).data
     manual_hikes = [@complete_hike_non_zero_start, @second_hike_incomplete].sort
     assert_equal(manual_hikes, constructed_hikes)
   end
 
   def test_one_hike
-    assert_equal(@incomplete_hike_zero_start, @manager.one_hike(1))
-    assert_equal(@second_hike_incomplete, @manager.one_hike(3))
-    assert_equal(@complete_hike_non_zero_start, @manager.one_hike(2))
+    assert_equal(@incomplete_hike_zero_start, @manager.one_hike(1).data)
+    assert_equal(@second_hike_incomplete, @manager.one_hike(3).data)
+    assert_equal(@complete_hike_non_zero_start, @manager.one_hike(2).data)
   end
 
   def test_all_points_from_hike
@@ -125,7 +125,7 @@ class ThruHikeTest < MiniTest::Test
           Point.new(@incomplete_hike_zero_start, 8.1, Date.new(2022, 4, 10)),
           Point.new(@incomplete_hike_zero_start, 15.7, Date.new(2022, 4, 11))
     ].sort
-    constructed_points = @manager.all_points_from_hike(1)
+    constructed_points = @manager.all_points_from_hike(1).data
 
     assert_equal(manual_points, constructed_points)
   end

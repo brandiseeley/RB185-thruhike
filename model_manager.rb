@@ -2,7 +2,8 @@ require_relative "thruhike"
 require_relative "database_persistence"
 require "pry-byebug"
 
-# Uses values returned from DatabasePersistence, returns constructed objects
+# Returns a LogStatus object that will contain correctly formatted objects
+# Or bad status if query was unsuccessful
 class ModelManager
   def initialize
     @database = DatabasePersistence.new
@@ -10,43 +11,74 @@ class ModelManager
 
   # Fetching methods
   def all_users
-    @database.all_users.map do |user_data|
-      construct_user(user_data)
-    end.sort
+    attempt = @database.all_users
+
+    if attempt.success
+      new_data = attempt.data.map do |user_data|
+        construct_user(user_data)
+      end.sort
+
+      attempt.data = new_data
+    end
+    attempt
   end
 
   def one_user(user_id)
-    user = @database.one_user(user_id).first
-    construct_user(user)
+    attempt = @database.one_user(user_id)
+
+    attempt.data = construct_user(attempt.data.first) if attempt.success
+    attempt
   end
 
   def all_hikes_from_user(user_id)
-    hikes = @database.all_hikes_from_user(user_id)
-    hikes.map do |hike_data|
-      construct_hike(hike_data)
-    end.sort
+    attempt = @database.all_hikes_from_user(user_id)
+
+    if attempt.success
+      new_data = attempt.data.map do |hike_data|
+        construct_hike(hike_data)
+      end.sort
+
+      attempt.data = new_data
+    end
+    attempt
   end
 
   def one_hike(hike_id)
-    hike_data = @database.one_hike(hike_id)
-    construct_hike(hike_data)
+    attempt = @database.one_hike(hike_id)
+
+    attempt.data = construct_hike(attempt.data.first) if attempt.success
+    attempt
   end
 
   def all_points_from_hike(hike_id)
-    hike_object = one_hike(hike_id)
-    points_data = @database.all_points_from_hike(hike_id)
-    points_data.map do |point_data|
-      construct_point(point_data, hike_object)
-    end.sort
+    attempt = @database.all_points_from_hike(hike_id)
+
+    if attempt.success
+      # DANGER DANGER BYPASSING CHECKS???
+      hike_object = one_hike(hike_id).data
+      points_data = attempt.data
+
+      new_data = points_data.map do |point_data|
+        construct_point(point_data, hike_object)
+      end.sort
+
+      attempt.data = new_data
+    end
+    attempt
   end
 
   # Statistic Methods
   def average_mileage_per_day(hike_id)
-    @database.average_mileage_per_day(hike_id)
+    attempt = @database.average_mileage_per_day(hike_id)
+
+    attempt.data = attempt.data.values.first.first.to_f if attempt.success
+    attempt
   end
 
   def mileage_from_finish(hike_id)
-    @database.mileage_from_finish(hike_id)
+    attempt = @database.mileage_from_finish(hike_id)
+    attempt.data = attempt.data.values.first.first.to_f if attempt.success
+    attempt
   end
 
   # Inserting/Altering Methods
@@ -56,19 +88,25 @@ class ModelManager
 
   # Returns id assigned by database
   def insert_new_hike(user_id, start_mileage, finish_mileage, name, completed)
-    @database.insert_new_hike(user_id, start_mileage, finish_mileage, name, completed)
+    attempt = @database.insert_new_hike(user_id, start_mileage, finish_mileage, name, completed)
+
+    attempt.data = attempt.data.values.flatten.first.to_i if attempt.success
+    attempt
   end
 
   # Returns id assigned by database
   def insert_new_point(hike_id, mileage, date)
-    @database.insert_new_point(hike_id, mileage, date)
+    attempt = @database.insert_new_point(hike_id, mileage, date)
+    attempt.data = attempt.data.values.flatten.first.to_i if attempt.success
+    attempt
   end
 
   # Returns id assigned by database
   def insert_new_user(name, user_name)
-    @database.insert_new_user(name, user_name)
+    attempt = @database.insert_new_user(name, user_name)
+    attempt.data = attempt.data.values.flatten.first.to_i if attempt.success
+    attempt
   end
-
 
   private
 
@@ -80,7 +118,7 @@ class ModelManager
 
   def construct_hike(row)
     user_id = row["user_id"].to_i
-    user = one_user(user_id)
+    user = one_user(user_id).data
     Hike.new(user,
              row["start_mileage"].to_f,
              row["finish_mileage"].to_f,

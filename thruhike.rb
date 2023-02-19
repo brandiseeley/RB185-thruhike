@@ -40,11 +40,14 @@ class Hike
     # ??? Is this validation happening where we want it?
     raise(NoMatchingPKError, "Can't initialize new Hike with User ID that doesn't exist") unless @user.id
 
-    @id = @manager.insert_new_hike(@user.id,
-                                   @start_mileage,
-                                   @finish_mileage,
-                                   @name,
-                                   @completed)
+    status = @manager.insert_new_hike(@user.id,
+                                      @start_mileage,
+                                      @finish_mileage,
+                                      @name,
+                                      @completed)
+    if status.success
+      @id = status.data
+    end                                      
     self
   end
 
@@ -96,7 +99,10 @@ class Point
   def save
     raise(NoMatchingPKError, "Can't initialize new Point with Hike ID that doesn't exist") unless @hike.id
 
-    @id = @manager.insert_new_point(@hike.id, @mileage, @date)
+    status = @manager.insert_new_point(@hike.id, @mileage, @date)
+    if status.success
+      @id = status.data
+    end
     self
   end
 
@@ -131,7 +137,10 @@ class User
   end
 
   def save
-    @id = @manager.insert_new_user(@name, @user_name)
+    status = @manager.insert_new_user(@name, @user_name)
+    if status.success
+      @id = status.data
+    end
     self
   end
 

@@ -1,3 +1,4 @@
+require "pry-byebug"
 # Direct interaction with Postgres Database via PG::Connection object
 # Shouldn't be concerned with validation, should only insert/query/delete
 class DatabasePersistence
@@ -9,7 +10,16 @@ class DatabasePersistence
   end
 
   def query(statement, *params)
-    @database.exec_params(statement, params)
+    # binding.pry
+    begin
+      data = @database.exec_params(statement, params)
+    rescue PG::UniqueViolation => error
+      return LogStatus.new(false, error.message)
+    rescue PG::CheckViolation => error
+      return LogStatus.new(false, error.message)
+    else
+      return LogStatus.new(true, "Okay", data)
+    end
   end
 
   def insert_new_hike(user_id, start_mileage, finish_mileage, name, completed)
@@ -21,7 +31,7 @@ class DatabasePersistence
             RETURNING id;
     SQL
 
-    query(sql, user_id, start_mileage, finish_mileage, name, completed).values.flatten.first.to_i
+    query(sql, user_id, start_mileage, finish_mileage, name, completed)
   end
 
   def insert_new_point(hike_id, mileage, date)
@@ -32,7 +42,7 @@ class DatabasePersistence
             ($1, $2, $3);
     SQL
 
-    query(sql, hike_id, mileage, date).values.flatten.first.to_i
+    query(sql, hike_id, mileage, date)
   end
 
   def insert_new_user(name, user_name)
@@ -44,7 +54,7 @@ class DatabasePersistence
             RETURNING id;
     SQL
 
-    query(sql, name, user_name).values.flatten.first.to_i
+    query(sql, name, user_name)
   end
 
   def average_mileage_per_day(hike_id)
@@ -57,7 +67,7 @@ class DatabasePersistence
             WHERE hike_id = $1
             ORDER BY date ) AS mileage_per_day;
     SQL
-    scalar_query_to_float(query(sql, hike_id))
+    query(sql, hike_id)
   end
 
   def mileage_from_finish(hike_id)
@@ -68,8 +78,7 @@ class DatabasePersistence
           WHERE hikes.id = $1
           GROUP BY hikes.id;
     SQL
-    result = query(sql, hike_id)
-    scalar_query_to_float(result)
+    query(sql, hike_id)
   end
 
   def all_users
@@ -88,7 +97,7 @@ class DatabasePersistence
 
   def one_hike(hike_id)
     sql = "SELECT * FROM hikes WHERE hikes.id = $1"
-    query(sql, hike_id).first
+    query(sql, hike_id)
   end
 
   def all_points_from_hike(hike_id)
@@ -100,10 +109,15 @@ class DatabasePersistence
     sql = "UPDATE hikes SET completed = true WHERE id = $1"
     query(sql, hike_id)
   end
+end
 
-  private
+class LogStatus
+  attr_reader :success, :message, :data
+  attr_writer :data
 
-  def scalar_query_to_float(result)
-    result.values.first.first.to_f
+  def initialize(success, message, data=nil)
+    @success = success
+    @message = message
+    @data = data
   end
 end

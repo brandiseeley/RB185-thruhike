@@ -1,3 +1,7 @@
+DROP TABLE points;
+DROP TABLE hikes;
+DROP TABLE users;
+
 CREATE TABLE users (
   id serial PRIMARY KEY,
   name text NOT NULL CHECK(LENGTH(name) BETWEEN 1 AND 50),
