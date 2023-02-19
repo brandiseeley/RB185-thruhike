@@ -108,6 +108,10 @@ class ModelManager
     attempt
   end
 
+  def hike_stats(hike)
+    HikeStats.new(hike, self)
+  end
+
   private
 
   def construct_user(row)
@@ -131,5 +135,14 @@ class ModelManager
     Point.new(hike,
               row["mileage"].to_f,
               DateTime.parse(row["date"]).to_date)
+  end
+end
+
+class HikeStats
+  attr_reader :average_mileage_per_day, :mileage_from_finish
+  def initialize(hike, manager)
+    # TODO : Handle bad status
+    @average_mileage_per_day = manager.average_mileage_per_day(hike.id).data
+    @mileage_from_finish = manager.mileage_from_finish(hike.id).data
   end
 end

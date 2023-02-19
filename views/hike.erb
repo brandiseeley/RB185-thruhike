@@ -1,7 +1,12 @@
 <div>
   <h1><%= @hike.name %></h2>
-  <ul>
+  <section class="statistics">
+  <p>Average Mileage Per Day: <%= @stats.average_mileage_per_day %></p>
+  <p>Miles from Finish: <%= @stats.mileage_from_finish %></p>
 
+  </section>
+
+  <ul>
   <% @points.each do |point| %>
 
     <ul>
@@ -10,7 +15,6 @@
     </ul>
 
   <% end %>
-
   <ul>
 </div>
 

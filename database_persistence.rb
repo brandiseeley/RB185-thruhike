@@ -6,6 +6,7 @@ class DatabasePersistence
   #       Multi-row queries should return raw PG::Result object
   #       Single-row queries should return single row values
   def initialize
+    puts "INITIALIZING NEW CONNECTION"
     @database = PG.connect(dbname: "thruhike")
   end
 

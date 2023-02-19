@@ -53,5 +53,6 @@ get "/hikes/:hike_id" do
   # TODO : Handle bad status
   @hike = @manager.one_hike(hike_id).data
   @points = @manager.all_points_from_hike(hike_id).data
+  @stats = @manager.hike_stats(@hike)
   erb :hike
 end
