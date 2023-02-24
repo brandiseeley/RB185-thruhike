@@ -14,12 +14,21 @@ class DatabasePersistence
   end
 end
 
+=begin
+@user1 = User.new("User One", "user_one_1")
+@manager.insert_new_user(@user1)
+@incomplete_hike_zero_start = Hike.new(@user1, 0.0, 2194.3, "Incomplete Hike Zero Start", false)
+@manager.insert_new_hike(@incomplete_hike_zero_start)
+
+=end
+
 # Test basic ThruHike methods with small datasets
 class ThruHikeTest < MiniTest::Test
   def setup
     # Database Reset
     database = PG.connect(dbname: "test_thruhike")
     schema_sql = File.open("test_schema.sql", &:read)
+    # binding.pry
     database.exec(schema_sql)
 
     @manager = ModelManager.new
