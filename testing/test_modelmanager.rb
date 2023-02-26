@@ -7,13 +7,6 @@ require_relative "../models"
 require_relative "../database_persistence"
 require_relative "../model_manager"
 
-# Have to override initialize for DatabasePersistence so we connect to test database
-class DatabasePersistence
-  def initialize
-    @database = PG.connect(dbname: "test_thruhike")
-  end
-end
-
 # Test basic Model Manager methods with small datasets
 class ModelManagerTest < MiniTest::Test
   def setup
@@ -22,7 +15,7 @@ class ModelManagerTest < MiniTest::Test
     schema_sql = File.open("test_schema.sql", &:read)
     database.exec(schema_sql)
 
-    @manager = ModelManager.new
+    @manager = ModelManager.new("test_thruhike")
 
     @user1 = User.new("User One", "user_one_1")
     @manager.insert_new_user(@user1)
