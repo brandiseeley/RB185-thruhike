@@ -14,27 +14,17 @@ class DatabasePersistence
   end
 end
 
-=begin
-@user1 = User.new("User One", "user_one_1")
-@manager.insert_new_user(@user1)
-@incomplete_hike_zero_start = Hike.new(@user1, 0.0, 2194.3, "Incomplete Hike Zero Start", false)
-@manager.insert_new_hike(@incomplete_hike_zero_start)
-
-=end
-
 # Test basic Model Manager methods with small datasets
 class ModelManagerTest < MiniTest::Test
   def setup
     # Database Reset
     database = PG.connect(dbname: "test_thruhike")
     schema_sql = File.open("test_schema.sql", &:read)
-    # binding.pry
     database.exec(schema_sql)
 
     @manager = ModelManager.new
 
     @user1 = User.new("User One", "user_one_1")
-    # binding.pry
     @manager.insert_new_user(@user1)
 
     @incomplete_hike_zero_start = Hike.new(@user1, 0.0, 2194.3, "Incomplete Hike Zero Start", false)
@@ -89,46 +79,45 @@ class ModelManagerTest < MiniTest::Test
 
   def test_adding_point_to_unsaved_hike
     @unsaved_hike = Hike.new(@user1, 0, 100, "test hike", false)
-    point = @unsaved_hike.create_new_point(11.1, Date.new)
-    # TODO
-    # assert_raises(NoMatchingPKError) { point.save }
-  end
+    point = @unsaved_hike.create_new_point(11.1, Date.today)
 
+    status = @manager.insert_new_point(point)
+    assert_equal(false, status.success)
+    assert_includes(status.message, 'null value in column "hike_id" of relation "points" violates not-null constraint')
+  end
+  
   def test_adding_hike_to_nonexistant_user
     @unsaved_user = User.new("Olivier", "ochatot")
     hike = Hike.new(@unsaved_user, 0, 100, "test hike", false)
-    # TODO
-    # assert_raises(NoMatchingPKError) { hike.save }
+    
+    status = @manager.insert_new_hike(hike)
+    assert_includes(status.message, 'null value in column "user_id" of relation "hikes" violates not-null constraint')
   end
 
   def test_average_mileage_per_day
-    # TODO
-    # assert_equal(7.85, @incomplete_hike_zero_start.average_mileage_per_day.data)
-
+    status = @manager.average_mileage_per_day(@incomplete_hike_zero_start)
+    assert_equal(7.85, status.data)
+    
     @manager.insert_new_point(Point.new(@incomplete_hike_zero_start, 26.3, Date.new(2022, 4, 12)))
     @manager.insert_new_point(Point.new(@incomplete_hike_zero_start, 32.4, Date.new(2022, 4, 13)))
     @manager.insert_new_point(Point.new(@incomplete_hike_zero_start, 42.8, Date.new(2022, 4, 14)))
-
-    # TODO
-    # hikes no longer have statistic methods
-    # assert_equal(8.56, @incomplete_hike_zero_start.average_mileage_per_day.data)
+    
+    status = @manager.average_mileage_per_day(@incomplete_hike_zero_start)
+    assert_equal(8.56, status.data)
   end
 
   def test_mileage_to_finish
-    # TODO
-    # hikes no longer have statistic methods
-    # assert_equal(2178.6, @incomplete_hike_zero_start.mileage_from_finish.data)
-
+    status = @manager.mileage_from_finish(@incomplete_hike_zero_start)
+    assert_equal(2178.6, status.data)
+    
     @manager.insert_new_point(Point.new(@incomplete_hike_zero_start, 26.3, Date.new(2022, 4, 12)))
     @manager.insert_new_point(Point.new(@incomplete_hike_zero_start, 32.4, Date.new(2022, 4, 13)))
     @manager.insert_new_point(Point.new(@incomplete_hike_zero_start, 42.8, Date.new(2022, 4, 14)))
-
-    # TODO
-    # hikes no longer have statistic methods
-    # assert_equal(2151.5, @incomplete_hike_zero_start.mileage_from_finish.data)
+    
+    status = @manager.mileage_from_finish(@incomplete_hike_zero_start)
+    assert_equal(2151.5, status.data)
   end
 
-  # Test Model Manager
   def test_all_users
     constructed_users = @manager.all_users.data
     manual_users = [@user1, @user2].sort
