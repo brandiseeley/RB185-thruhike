@@ -47,7 +47,7 @@ class ModelManagerTest < MiniTest::Test
     @manager.insert_new_point(Point.new(@complete_hike_non_zero_start, 150.0, Date.new(2022, 1, 7)))
 
     @complete_hike_non_zero_start.mark_complete
-    @manager.mark_hike_complete(@complete_hike_non_zero_start.id)
+    @manager.mark_hike_complete(@complete_hike_non_zero_start)
 
     @second_hike_incomplete = Hike.new(@user2, 0.0, 30.0, "Short Hike Incomplete", false)
     @manager.insert_new_hike(@second_hike_incomplete)
@@ -150,7 +150,9 @@ class ModelManagerTest < MiniTest::Test
 
   def test_mark_complete
     assert_equal(false, @incomplete_hike_zero_start.completed)
-    @incomplete_hike_zero_start.mark_complete
-    assert_equal(true, @incomplete_hike_zero_start.completed)
+    @manager.mark_hike_complete(@incomplete_hike_zero_start)
+
+    updated_hike = @manager.one_hike(@incomplete_hike_zero_start.id).data
+    assert_equal(true, updated_hike.completed)
   end
 end
