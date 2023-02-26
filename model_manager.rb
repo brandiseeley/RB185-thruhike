@@ -1,6 +1,5 @@
-require_relative "thruhike"
+require_relative "models"
 require_relative "database_persistence"
-require "pry-byebug"
 
 # Returns a LogStatus object that will contain correctly formatted objects
 # Or bad status if query was unsuccessful
@@ -87,24 +86,35 @@ class ModelManager
   end
 
   # Returns id assigned by database
-  def insert_new_hike(user_id, start_mileage, finish_mileage, name, completed)
-    attempt = @database.insert_new_hike(user_id, start_mileage, finish_mileage, name, completed)
+  def insert_new_hike(hike)
+    attempt = @database.insert_new_hike(hike)
 
-    attempt.data = attempt.data.values.flatten.first.to_i if attempt.success
+    if attempt.success
+      attempt.data = attempt.data.values.flatten.first.to_i
+      hike.id = attempt.data
+    end
     attempt
   end
 
   # Returns id assigned by database
-  def insert_new_point(hike_id, mileage, date)
-    attempt = @database.insert_new_point(hike_id, mileage, date)
-    attempt.data = attempt.data.values.flatten.first.to_i if attempt.success
+  def insert_new_point(point)
+    attempt = @database.insert_new_point(point)
+
+    if attempt.success
+      attempt.data = attempt.data.values.flatten.first.to_i
+      point.id = attempt.data
+    end
     attempt
   end
 
-  # Returns id assigned by database
-  def insert_new_user(name, user_name)
-    attempt = @database.insert_new_user(name, user_name)
-    attempt.data = attempt.data.values.flatten.first.to_i if attempt.success
+  # Insert new user and update ID with id given by db
+  def insert_new_user(user)
+    attempt = @database.insert_new_user(user)
+
+    if attempt.success
+      attempt.data = attempt.data.values.flatten.first.to_i
+      user.id = attempt.data
+    end
     attempt
   end
 
@@ -138,6 +148,7 @@ class ModelManager
   end
 end
 
+# Returns statistics for a particular hike packages into an object
 class HikeStats
   attr_reader :average_mileage_per_day, :mileage_from_finish
   def initialize(hike, manager)

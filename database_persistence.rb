@@ -2,38 +2,40 @@ require "pry-byebug"
 # Direct interaction with Postgres Database via PG::Connection object
 # Shouldn't be concerned with validation, should only insert/query/delete
 class DatabasePersistence
-  @@database = PG.connect(dbname: "thruhike")
-
   def initialize
-    puts "INITIALIZING NEW CONNECTION"
+    @database = PG.connect(dbname: "thruhike")
   end
 
   def query(statement, *params)
-    # binding.pry
-    begin
-      data = @@database.exec_params(statement, params)
-    rescue PG::UniqueViolation => error
-      return LogStatus.new(false, error.message)
-    rescue PG::CheckViolation => error
-      return LogStatus.new(false, error.message)
-    else
-      return LogStatus.new(true, "Okay", data)
-    end
+    data = @database.exec_params(statement, params)
+  rescue PG::UniqueViolation => e
+    LogStatus.new(false, e.message)
+  rescue PG::CheckViolation => e
+    LogStatus.new(false, e.message)
+  else
+    LogStatus.new(true, "Okay", data)
   end
 
-  def insert_new_hike(user_id, start_mileage, finish_mileage, name, completed)
+  def insert_new_hike(hike)
+    user_id = hike.user.id
+    start_mileage = hike.start_mileage
+    finish_mileage = hike.finish_mileage
+    name = hike.name
+    completed = hike.completed
+
     sql = <<-SQL
             INSERT INTO hikes
             (user_id, start_mileage, finish_mileage, name, completed)
-            VALUES
-            ($1, $2, $3, $4, $5)
-            RETURNING id;
+            VALUES ($1, $2, $3, $4, $5) RETURNING id;
     SQL
-
     query(sql, user_id, start_mileage, finish_mileage, name, completed)
   end
 
-  def insert_new_point(hike_id, mileage, date)
+  def insert_new_point(point)
+    hike_id = point.hike.id
+    mileage = point.mileage
+    date = point.date
+
     sql = <<-SQL
             INSERT INTO points
             (hike_id, mileage, date)
@@ -44,7 +46,9 @@ class DatabasePersistence
     query(sql, hike_id, mileage, date)
   end
 
-  def insert_new_user(name, user_name)
+  def insert_new_user(user)
+    name = user.name
+    user_name = user.user_name
     sql = <<-SQL
             INSERT INTO users
             (name, user_name)
@@ -110,11 +114,12 @@ class DatabasePersistence
   end
 end
 
+# The status object that is returned by all DatabasePersistence methods
 class LogStatus
   attr_reader :success, :message, :data
   attr_writer :data
 
-  def initialize(success, message, data=nil)
+  def initialize(success, message, data = nil)
     @success = success
     @message = message
     @data = data
