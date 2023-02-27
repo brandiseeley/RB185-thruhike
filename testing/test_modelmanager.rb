@@ -54,7 +54,6 @@ class ModelManagerTest < MiniTest::Test
 
     @manager.insert_new_point(Point.new(@second_hike_incomplete, 9.3, Date.new(2023, 1, 13)))
     @manager.insert_new_point(Point.new(@second_hike_incomplete, 4.2, Date.new(2023, 1, 12)))
-
   end
 
   def teardown
@@ -67,7 +66,6 @@ class ModelManagerTest < MiniTest::Test
 
     database = PG.connect(dbname: "test_thruhike")
     database.exec(sql)
-
   end
 
   def test_adding_point_to_unsaved_hike
