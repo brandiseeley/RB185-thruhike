@@ -27,7 +27,12 @@
     <input type="date" name="date" required>
 
     <label for="mileage">Mile: </label>
-    <input type="text" name="mileage" required>
+    <input type="number" 
+           name="mileage"
+           step="0.01"
+           min="<%= @hike.start_mileage %>"
+           max="<%= @hike.finish_mileage %>"
+           required>
 
     <button>Create New Point</button>
     </form>

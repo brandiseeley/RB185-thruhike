@@ -5,10 +5,18 @@
   <input type="text" name="name" required>
 
   <label for="start_mileage">Enter the starting mileage: </label>
-  <input type="text" name="start_mileage" required>
+  <input type="number"
+         name="start_mileage"
+         min="0"
+         step="0.01"
+         required>
 
   <label for="finish_mileage">Enter the end mileage: </label>
-  <input type="text" name="finish_mileage" required>
+  <input type="number"
+         name="finish_mileage"
+         min="0"
+         step="0.01"
+         required>
 
   <button>Create Hike</button>
 </form>
