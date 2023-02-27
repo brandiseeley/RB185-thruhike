@@ -50,10 +50,11 @@ class Point
   attr_reader :hike, :mileage, :date
   attr_accessor :id
 
-  def initialize(hike_object, mileage, date)
+  def initialize(hike_object, mileage, date, id = nil)
     @hike = hike_object
     @mileage = mileage
     @date = date
+    @id = id
   end
 
   def ==(other)
@@ -67,7 +68,7 @@ class Point
   end
 
   def to_s
-    "Hike: #{hike}, Mileage: #{mileage}, Date: #{date}"
+    "Hike: #{hike}, Mileage: #{mileage}, Date: #{date}, ID: #{id}"
   end
 end
 

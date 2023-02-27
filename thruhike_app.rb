@@ -13,24 +13,27 @@ configure do
   also_reload "database_persistence.rb", "model_manager.rb", "thruhike.rb" if development?
 end
 
+before do
+  @manager = ModelManager.new
+end
+
+### USER HELPERS ###
+
 def logged_in_user
   user_id = session[:user_id]
-  # TODO : Handle bad status
-  @manager.one_user(user_id).data
+
+  # TODO : This validation needs tested
+  status = @manager.one_user(user_id)
+  if !status.success
+    session[:message] = "User not found"
+    redirect "/"
+  end
+
+  status.data
 end
 
 def logged_in?
   session[:user_id]
-end
-
-def valid_hike?(name, start_mileage, finish_mileage, user)
-  # Validation goes here
-  true
-end
-
-def valid_point?(hike, mileage, date)
-  # Validation goes here
-  true
 end
 
 def require_login
@@ -38,21 +41,50 @@ def require_login
   redirect "/"
 end
 
-before do
-  @manager = ModelManager.new
+### VALIDATION HELPERS ###
+
+def validate_point_details(hike, mileage, date, hike_id)
 end
+
+def validate_hike_details(hike_name, start_mileage, finish_mileage, user)
+  if hike_name.empty?
+    session[:message] = "Hike name must be non-empty"
+    redirect "/hikes/new"
+  elsif finish_mileage - start_mileage <= 0
+    session[:message] = "Finishing mileage must be greater than starting mileage"
+    redirect "/hikes/new"
+  elsif duplicate_name?(hike_name, user)
+    session[:message] = "You already have a hike titled '#{hike_name}'"
+    redirect "/hikes/new"
+  end
+end
+
+# Ensures hike belongs to currently logged in user
+def validate_hike_to_delete(hike_id, user_id)
+  all_hikes_status = @manager.all_hikes_from_user(user_id)
+  if all_hikes_status.success
+    if all_hikes_status.data.none? { |hike| hike.id == hike_id }
+      session[:message] = "Permission denied, unable to delete hike"
+      redirect "/hikes"
+    end
+  else
+    session[:message] = "There was an error retrieving your hikes"
+  end
+end
+
+def duplicate_name?(hike_name, user)
+  all_hikes = @manager.all_hikes_from_user(user.id).data
+  all_hikes.any? { |hike| hike.name == hike_name }
+end
+
+### FETCHING HELPERS ###
+
+### ROUTES ###
 
 get "/" do
   # TODO : Handle bad status
   @users = @manager.all_users.data
   erb :home
-end
-
-post "/hikes" do
-  user_id = params["user_id"]
-  session[:user_id] = user_id
-  # TODO: validate user exists
-  redirect "/hikes"
 end
 
 get "/hikes" do
@@ -61,6 +93,13 @@ get "/hikes" do
   # TODO : Handle bad status
   @hikes = @manager.all_hikes_from_user(@user.id).data
   erb :hikes
+end
+
+post "/hikes" do
+  user_id = params["user_id"]
+  session[:user_id] = user_id
+  # TODO: validate user exists
+  redirect "/hikes"
 end
 
 get "/hikes/new" do
@@ -72,25 +111,30 @@ end
 
 post "/hikes/new" do
   require_login unless logged_in?
-  hike_name = params[:name]
+  hike_name = params[:name].strip
   start_mileage = params[:start_mileage].to_f
   finish_mileage = params[:finish_mileage].to_f
   user = logged_in_user
 
-  if !valid_hike?(hike_name, start_mileage, finish_mileage, user)
-    session[:message] = "Some input was wrong"
+  validate_hike_details(hike_name, start_mileage, finish_mileage, user)
+  hike = Hike.new(user, start_mileage, finish_mileage, hike_name, false)
+  status = @manager.insert_new_hike(hike)
+  if status.success
+    session[:message] = "Hike successfully created"
+    redirect "/hikes"
   else
-    hike = Hike.new(user, start_mileage, finish_mileage, hike_name, false)
-    status = @manager.insert_new_hike(hike)
-    if status.success
-      session[:message] = "Hike successfully created"
-      redirect "/hikes"
-    else
-      session[:message] = "There was an error creating this hike"
-    end
+    session[:message] = "There was an error creating this hike"
   end
-  puts session[:message]
   redirect "/hikes/new"
+end
+
+post "/hikes/delete" do
+  hike_id = params[:hike_id].to_i
+  validate_hike_to_delete(hike_id, session[:user_id])
+  status = @manager.delete_hike(hike_id)
+
+  session[:message] = status.success ? "Hike successfully deleted" : "There was an error deleting hike"
+  redirect "/hikes"
 end
 
 get "/hikes/:hike_id" do
@@ -111,14 +155,18 @@ post "/hikes/:hike_id" do
   mileage = params[:mileage]
   hike = @manager.one_hike(hike_id).data
 
-  if valid_point?(hike, mileage, date)
-    point = Point.new(hike, mileage, date)
-    status = @manager.insert_new_point(point)
-    if status.success
-      session[:message] = "Point successfully created"
-      redirect "/hikes/#{hike_id}"
-    end
-  end
-  session[:message] = "There was an error, point creation unsuccessful"
+  validate_point_details(hike, mileage, date, hike_id)
+  point = Point.new(hike, mileage, date)
+  status = @manager.insert_new_point(point)
+  
+  session[:message] = status.success ? "Point successfully created" : "There was an error creating point"
+  redirect "/hikes/#{hike_id}"
+end
+
+post "/hikes/:hike_id/delete" do
+  point_id = params[:point_id]
+
+  attempt = @manager.delete_point(point_id)
+  session[:message] = attempt.success ? "Point successfully deleted" : "There was an error deleting point"
   redirect "/hikes/#{hike_id}"
 end

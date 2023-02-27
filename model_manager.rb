@@ -67,6 +67,17 @@ class ModelManager
     attempt
   end
 
+  def one_point(point_id)
+    attempt = @@database.one_point(point_id)
+    
+    if attempt.success
+      hike_id = attempt.data.first["hike_id"].to_i
+      hike = one_hike(hike_id)
+      attempt.data = construct_point(attempt.data.first, hike)
+    end
+    attempt
+  end
+
   # Statistic Methods
   def average_mileage_per_day(hike)
     attempt = @@database.average_mileage_per_day(hike)
@@ -123,6 +134,14 @@ class ModelManager
     attempt
   end
 
+  def delete_hike(hike_id)
+    @@database.delete_hike(hike_id)
+  end
+
+  def delete_point(point_id)
+    @@database.delete_point(point_id)
+  end
+
   def hike_stats(hike)
     HikeStats.new(hike, self)
   end
@@ -147,9 +166,11 @@ class ModelManager
   end
 
   def construct_point(row, hike)
+    
     Point.new(hike,
               row["mileage"].to_f,
-              DateTime.parse(row["date"]).to_date)
+              DateTime.parse(row["date"]).to_date,
+              row["id"].to_i)
   end
 end
 

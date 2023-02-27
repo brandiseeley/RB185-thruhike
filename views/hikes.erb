@@ -13,6 +13,11 @@
       <ul>
         <li>Start Mileage: <%= hike.start_mileage %></li>
         <li>Finish Mileage: <%= hike.finish_mileage %></li>
+        <li>
+          <form action="/hikes/delete" method="POST">
+          <button name="hike_id" value="<%= hike.id %>">Delete Hike</button>
+          </form>
+        </li>
       </ul>
 
   <% end %>

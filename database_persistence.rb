@@ -64,6 +64,16 @@ class DatabasePersistence
     query(sql, name, user_name)
   end
 
+  def delete_hike(hike_id)
+    sql = "DELETE FROM hikes WHERE id = $1"
+    query(sql, hike_id)
+  end
+
+  def delete_point(point_id)
+    sql = "DELETE FROM points WHERE id = $1"
+    query(sql, point_id)
+  end
+
   def average_mileage_per_day(hike)
     sql = <<-SQL
           SELECT ROUND(AVG(days_mileage), 2) FROM (
@@ -114,6 +124,11 @@ class DatabasePersistence
   def all_points_from_hike(hike_id)
     sql = "SELECT * FROM points WHERE hike_id = $1"
     query(sql, hike_id)
+  end
+
+  def one_point(point_id)
+    sql = "SELECT * FROM points WHERE id = $1"
+    query(sql, point_id)
   end
 
   def mark_hike_complete(hike)

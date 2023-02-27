@@ -9,11 +9,16 @@
   <section class="points">
     <ul>
     <% @points.each do |point| %>
-
+    
       <ul>
         <li>Date: <%= point.date %></li>
         <ul>
           <li>Mile Mark: <%= point.mileage %></li>
+          <li>
+            <form action="/hikes/<%= @hike.id %>/delete" method="POST">
+              <button name="point_id" value="<%= point.id %>">Delete Point</button>
+            </form>
+          </li>
         </ul>
       </ul>
 

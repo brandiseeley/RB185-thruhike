@@ -158,9 +158,29 @@ class AppTest < Minitest::Test
     assert_equal(302, last_response.status)
     assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
     assert_equal("Hike successfully created", session[:message])
-
+    
     follow_redirect!
     assert_equal(200, last_response.status)
     assert_includes(last_response.body, "Long Walk")
+  end
+  
+  def test_delete_hike_user_2
+    post "/hikes/delete", {"hike_id" => "2"}, log_in_user_2
+    assert_equal(302, last_response.status)
+    assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
+    assert_equal("Hike successfully deleted", session[:message])
+    
+    follow_redirect!
+    assert_equal(200, last_response.status)
+    refute_includes(last_response.body, "Complete Hike Non-zero Start")
+  end
+  
+  # TODO : VALIDATE HIKE BELONGS TO USER
+  def test_deleting_non_existant_hike_user_2
+    post "/hikes/delete", {"hike_id" => "1"}, log_in_user_2
+    
+    assert_equal(302, last_response.status)
+    assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
+    assert_equal("Permission denied, unable to delete hike", session[:message])
   end
 end
