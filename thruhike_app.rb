@@ -1,9 +1,11 @@
+require "pry"
 require "sinatra"
 require "sinatra/reloader" if development?
 require "tilt/erubis"
 require "securerandom"
 
 require_relative "model_manager"
+require_relative "models"
 
 configure do
   enable :sessions
@@ -19,6 +21,11 @@ end
 
 def logged_in?
   session[:user_id]
+end
+
+def valid_hike?(name, start_mileage, finish_mileage, user)
+  # Validation goes here
+  true
 end
 
 before do
@@ -44,6 +51,35 @@ get "/hikes" do
   # TODO : Handle bad status
   @hikes = @manager.all_hikes_from_user(@user.id).data
   erb :hikes
+end
+
+get "/hikes/new" do
+  redirect "/" unless logged_in?
+  @user = logged_in_user
+
+  erb :new_hike
+end
+
+post "/hikes/new" do
+  hike_name = params[:name]
+  start_mileage = params[:start_mileage].to_f
+  finish_mileage = params[:finish_mileage].to_f
+  user = logged_in_user
+
+  if !valid_hike?(hike_name, start_mileage, finish_mileage, user)
+    session[:message] = "Some input was wrong"
+  else
+    hike = Hike.new(user, start_mileage, finish_mileage, hike_name, false)
+    status = @manager.insert_new_hike(hike)
+    if status.success
+      session[:message] = "Hike successfully created"
+      redirect "/hikes"
+    else
+      session[:message] = "There was an error creating this hike"
+    end
+  end
+  puts session[:message]
+  redirect "/hikes/new"
 end
 
 get "/hikes/:hike_id" do

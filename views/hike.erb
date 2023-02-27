@@ -3,7 +3,7 @@
   <section class="statistics">
   <p>Average Mileage Per Day: <%= @stats.average_mileage_per_day %></p>
   <p>Miles from Finish: <%= @stats.mileage_from_finish %></p>
-  <p>Most recent Entry: <%= @points.first.date %></p>
+  <p>Most recent Entry: <%= @points.first.date if !@points.empty? %></p>
 
   </section>
 
@@ -12,7 +12,9 @@
 
     <ul>
       <li>Date: <%= point.date %></li>
-      <li>Mileage: <%= point.mileage %></li>
+      <ul>
+        <li>Mileage: <%= point.mileage %></li>
+      </ul>
     </ul>
 
   <% end %>

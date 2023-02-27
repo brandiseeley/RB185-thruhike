@@ -4,13 +4,15 @@ require_relative "database_persistence"
 # Returns a LogStatus object that will contain correctly formatted objects
 # Or bad status if query was unsuccessful
 class ModelManager
-  def initialize
-    @database = DatabasePersistence.new
+  @@database = DatabasePersistence.new
+
+  def initialize(alternate_database = nil)
+    @@database = DatabasePersistence.new(alternate_database) if alternate_database
   end
 
   # Fetching methods
   def all_users
-    attempt = @database.all_users
+    attempt = @@database.all_users
 
     if attempt.success
       new_data = attempt.data.map do |user_data|
@@ -23,14 +25,14 @@ class ModelManager
   end
 
   def one_user(user_id)
-    attempt = @database.one_user(user_id)
+    attempt = @@database.one_user(user_id)
 
     attempt.data = construct_user(attempt.data.first) if attempt.success
     attempt
   end
 
   def all_hikes_from_user(user_id)
-    attempt = @database.all_hikes_from_user(user_id)
+    attempt = @@database.all_hikes_from_user(user_id)
 
     if attempt.success
       new_data = attempt.data.map do |hike_data|
@@ -43,17 +45,16 @@ class ModelManager
   end
 
   def one_hike(hike_id)
-    attempt = @database.one_hike(hike_id)
+    attempt = @@database.one_hike(hike_id)
 
     attempt.data = construct_hike(attempt.data.first) if attempt.success
     attempt
   end
 
   def all_points_from_hike(hike_id)
-    attempt = @database.all_points_from_hike(hike_id)
+    attempt = @@database.all_points_from_hike(hike_id)
 
     if attempt.success
-      # DANGER DANGER BYPASSING CHECKS???
       hike_object = one_hike(hike_id).data
       points_data = attempt.data
 
@@ -67,27 +68,31 @@ class ModelManager
   end
 
   # Statistic Methods
-  def average_mileage_per_day(hike_id)
-    attempt = @database.average_mileage_per_day(hike_id)
-
-    attempt.data = attempt.data.values.first.first.to_f if attempt.success
+  def average_mileage_per_day(hike)
+    attempt = @@database.average_mileage_per_day(hike)
+    attempt.data = attempt.data.values.flatten.first.to_f if attempt.success
     attempt
   end
 
-  def mileage_from_finish(hike_id)
-    attempt = @database.mileage_from_finish(hike_id)
-    attempt.data = attempt.data.values.first.first.to_f if attempt.success
-    attempt
+  def mileage_from_finish(hike)
+    number_of_points = @@database.number_of_points(hike)
+    if number_of_points.data.values.first.first.to_i.zero?
+      LogStatus.new(true, "okay", @@database.length_of_hike(hike).data)
+    else
+      attempt = @@database.mileage_from_finish(hike)
+      attempt.data = attempt.data.values.flatten.first.to_f if attempt.success
+      attempt
+    end
   end
 
   # Inserting/Altering Methods
-  def mark_hike_complete(hike_id)
-    @database.mark_hike_complete(hike_id)
+  def mark_hike_complete(hike)
+    @@database.mark_hike_complete(hike)
   end
 
   # Returns id assigned by database
   def insert_new_hike(hike)
-    attempt = @database.insert_new_hike(hike)
+    attempt = @@database.insert_new_hike(hike)
 
     if attempt.success
       attempt.data = attempt.data.values.flatten.first.to_i
@@ -98,7 +103,7 @@ class ModelManager
 
   # Returns id assigned by database
   def insert_new_point(point)
-    attempt = @database.insert_new_point(point)
+    attempt = @@database.insert_new_point(point)
 
     if attempt.success
       attempt.data = attempt.data.values.flatten.first.to_i
@@ -109,7 +114,7 @@ class ModelManager
 
   # Insert new user and update ID with id given by db
   def insert_new_user(user)
-    attempt = @database.insert_new_user(user)
+    attempt = @@database.insert_new_user(user)
 
     if attempt.success
       attempt.data = attempt.data.values.flatten.first.to_i
@@ -153,7 +158,7 @@ class HikeStats
   attr_reader :average_mileage_per_day, :mileage_from_finish
   def initialize(hike, manager)
     # TODO : Handle bad status
-    @average_mileage_per_day = manager.average_mileage_per_day(hike.id).data
-    @mileage_from_finish = manager.mileage_from_finish(hike.id).data
+    @average_mileage_per_day = manager.average_mileage_per_day(hike).data
+    @mileage_from_finish = manager.mileage_from_finish(hike).data
   end
 end

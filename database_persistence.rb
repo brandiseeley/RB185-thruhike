@@ -2,15 +2,19 @@ require "pry-byebug"
 # Direct interaction with Postgres Database via PG::Connection object
 # Shouldn't be concerned with validation, should only insert/query/delete
 class DatabasePersistence
-  def initialize
-    @database = PG.connect(dbname: "thruhike")
+  @@database = PG.connect(dbname: "thruhike")
+
+  def initialize(alternate_database = nil)
+    @@database = PG.connect(dbname: alternate_database) if alternate_database
   end
 
   def query(statement, *params)
-    data = @database.exec_params(statement, params)
+    data = @@database.exec_params(statement, params)
   rescue PG::UniqueViolation => e
     LogStatus.new(false, e.message)
   rescue PG::CheckViolation => e
+    LogStatus.new(false, e.message)
+  rescue PG::NotNullViolation => e
     LogStatus.new(false, e.message)
   else
     LogStatus.new(true, "Okay", data)
@@ -60,7 +64,7 @@ class DatabasePersistence
     query(sql, name, user_name)
   end
 
-  def average_mileage_per_day(hike_id)
+  def average_mileage_per_day(hike)
     sql = <<-SQL
           SELECT ROUND(AVG(days_mileage), 2) FROM (
             SELECT CASE
@@ -70,10 +74,10 @@ class DatabasePersistence
             WHERE hike_id = $1
             ORDER BY date ) AS mileage_per_day;
     SQL
-    query(sql, hike_id)
+    query(sql, hike.id)
   end
 
-  def mileage_from_finish(hike_id)
+  def mileage_from_finish(hike)
     sql = <<-SQL
           SELECT hikes.finish_mileage - max(points.mileage)
           FROM hikes JOIN points
@@ -81,7 +85,7 @@ class DatabasePersistence
           WHERE hikes.id = $1
           GROUP BY hikes.id;
     SQL
-    query(sql, hike_id)
+    query(sql, hike.id)
   end
 
   def all_users
@@ -108,9 +112,22 @@ class DatabasePersistence
     query(sql, hike_id)
   end
 
-  def mark_hike_complete(hike_id)
+  def mark_hike_complete(hike)
     sql = "UPDATE hikes SET completed = true WHERE id = $1"
-    query(sql, hike_id)
+    query(sql, hike.id)
+  end
+
+  def number_of_points(hike)
+    sql = <<-SQL
+          SELECT COUNT(id) FROM points
+          WHERE hike_id = $1
+    SQL
+
+    query(sql, hike.id)
+  end
+
+  def length_of_hike(hike)
+    LogStatus.new(true, "okay", hike.finish_mileage - hike.start_mileage)
   end
 end
 
