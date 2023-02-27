@@ -88,6 +88,10 @@ class DatabasePersistence
     query(sql, hike.id)
   end
 
+  def mileage_from_last_point(point)
+    # TODO
+  end
+
   def all_users
     query("SELECT * FROM users;")
   end

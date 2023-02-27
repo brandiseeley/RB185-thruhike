@@ -4,14 +4,21 @@
     <title>Title Goes Here</title>
     <meta charset="utf-8">
   </head>
-  <body>
   <header>
+
     <div class="header">
       <h2>Hike Hub</h2>
-      <p><%= session[:message] %></p>
+      <% if session[:message] %>
+        <p style="color:orange"><%= session.delete(:message) %></p>
+      <% end %>
     </div>
+
+  </header>
+  <body>
+
     <div class="content">
       <%= yield %>
     </div>
+
   </body>
 </html>
