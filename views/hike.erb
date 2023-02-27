@@ -6,18 +6,31 @@
   <p>Most recent Entry: <%= @points.first.date if !@points.empty? %></p>
 
   </section>
-
-  <ul>
-  <% @points.each do |point| %>
-
+  <section class="points">
     <ul>
-      <li>Date: <%= point.date %></li>
-      <ul>
-        <li>Mile Mark: <%= point.mileage %></li>
-      </ul>
-    </ul>
+    <% @points.each do |point| %>
 
-  <% end %>
-  <ul>
+      <ul>
+        <li>Date: <%= point.date %></li>
+        <ul>
+          <li>Mile Mark: <%= point.mileage %></li>
+        </ul>
+      </ul>
+
+    <% end %>
+    <ul>
+  </section>
+  <h2>New Point</h2>
+  <section class="point-form">
+    <form action="/hikes/<%= @hike.id %>" method="POST">
+    <label for="date">Date: </label>
+    <input type="date" name="date" required>
+
+    <label for="mileage">Mile: </label>
+    <input type="text" name="mileage" required>
+
+    <button>Create New Point</button>
+    </form>
+  </section>
 </div>
 
