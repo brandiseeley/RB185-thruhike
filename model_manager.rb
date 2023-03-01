@@ -69,7 +69,7 @@ class ModelManager
 
   def one_point(point_id)
     attempt = @@database.one_point(point_id)
-    
+
     if attempt.success
       hike_id = attempt.data.first["hike_id"].to_i
       hike = one_hike(hike_id)
@@ -166,7 +166,7 @@ class ModelManager
   end
 
   def construct_point(row, hike)
-    
+
     Point.new(hike,
               row["mileage"].to_f,
               DateTime.parse(row["date"]).to_date,

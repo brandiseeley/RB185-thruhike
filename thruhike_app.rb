@@ -24,7 +24,7 @@ def logged_in_user
 
   # TODO : This validation needs tested
   status = @manager.one_user(user_id)
-  if !status.success
+  unless status.success
     session[:message] = "User not found"
     redirect "/"
   end
@@ -47,10 +47,12 @@ end
 
 ### VALIDATION HELPERS ###
 
+# TODO : validate mileage?
 def validate_point_details(hike, mileage, date, hike_id)
   # Check that date is unique
   points = @manager.all_points_from_hike(hike_id).data
   return if points.none? { |p| to_date(date) === p.date }
+
   session[:message] = "Each day may only have one point"
   redirect "/hikes/#{hike_id}"
 end
@@ -168,7 +170,7 @@ post "/hikes/:hike_id" do
   validate_point_details(hike, mileage, date, hike_id)
   point = Point.new(hike, mileage, date)
   status = @manager.insert_new_point(point)
-  
+
   session[:message] = status.success ? "Point successfully created" : "There was an error creating point"
   redirect "/hikes/#{hike_id}"
 end

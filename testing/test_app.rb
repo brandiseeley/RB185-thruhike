@@ -20,7 +20,7 @@ class AppTest < Minitest::Test
   end
 
   def log_in_user_2
-    {"rack.session" => { user_id: "2"} }
+    { "rack.session" => { user_id: "2" } }
   end
 
   def new_hike_params
@@ -95,7 +95,7 @@ class AppTest < Minitest::Test
     assert_includes(last_response.body, "user_one_1")
     assert_includes(last_response.body, "user_two_2")
   end
-  
+
   # Not Logged In tests
   def test_get_hikes_not_logged_in
     get "/hikes"
@@ -105,7 +105,7 @@ class AppTest < Minitest::Test
     follow_redirect!
     assert_equal(200, last_response.status)
   end
-  
+
   def test_post_hikes_not_logged_in
     post "/hikes/new"
     assert_equal(302, last_response.status)
@@ -114,7 +114,7 @@ class AppTest < Minitest::Test
     follow_redirect!
     assert_equal(200, last_response.status)
   end
-  
+
   def test_new_hike_not_logged_in
     get "/hikes/new"
     assert_equal(302, last_response.status)
@@ -123,7 +123,7 @@ class AppTest < Minitest::Test
     follow_redirect!
     assert_equal(200, last_response.status)
   end
-  
+
   # Signed in User 2
   def test_get_hikes_user_2
     get "/hikes", {}, log_in_user_2
@@ -132,7 +132,7 @@ class AppTest < Minitest::Test
     assert_includes(last_response.body, "Short Hike Incomplete")
     assert_includes(last_response.body, "Complete Hike Non-zero Start")
   end
-  
+
   def test_get_hike_2_user_2
     get "/hikes/2", {}, log_in_user_2
     assert_equal(200, last_response.status)
@@ -144,7 +144,8 @@ class AppTest < Minitest::Test
     assert_includes(last_response.body, "Date: 2021-12-29")
     assert_includes(last_response.body, "Mile Mark: 58.3")
   end
-  
+
+  # Create Hike Tests
   def test_new_hike_user_2
     get "/hikes/new", {}, log_in_user_2
     assert_equal(200, last_response.status)
@@ -152,35 +153,90 @@ class AppTest < Minitest::Test
     assert_includes(last_response.body, "Enter the Details for Your New Hike")
     assert_includes(last_response.body, "<form action=\"/hikes/new\" method=\"POST\">")
   end
-  
+
   def test_create_new_hike_user_2
     post "/hikes/new", new_hike_params, log_in_user_2
     assert_equal(302, last_response.status)
     assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
     assert_equal("Hike successfully created", session[:message])
-    
+
     follow_redirect!
     assert_equal(200, last_response.status)
     assert_includes(last_response.body, "Long Walk")
   end
-  
+
+  # Delete Hike Tests
   def test_delete_hike_user_2
-    post "/hikes/delete", {"hike_id" => "2"}, log_in_user_2
+    post "/hikes/delete", { "hike_id" => "2" }, log_in_user_2
     assert_equal(302, last_response.status)
     assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
     assert_equal("Hike successfully deleted", session[:message])
-    
+
     follow_redirect!
     assert_equal(200, last_response.status)
     refute_includes(last_response.body, "Complete Hike Non-zero Start")
   end
-  
-  # TODO : VALIDATE HIKE BELONGS TO USER
-  def test_deleting_non_existant_hike_user_2
-    post "/hikes/delete", {"hike_id" => "1"}, log_in_user_2
-    
+
+  def test_deleting_hike_of_other_user_user_2
+    post "/hikes/delete", { "hike_id" => "1" }, log_in_user_2
+
     assert_equal(302, last_response.status)
     assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
     assert_equal("Permission denied, unable to delete hike", session[:message])
+  end
+
+  def test_deleting_non_existant_hike_user_2
+    post "/hikes/delete", { "hike_id" => "42" }, log_in_user_2
+
+    assert_equal(302, last_response.status)
+    assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
+    assert_equal("Permission denied, unable to delete hike", session[:message])
+  end
+
+  def test_deleting_hike_not_logged_in
+    post "/hikes/delete", { "hike_id" => "2" }
+
+    assert_equal(302, last_response.status)
+    assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
+    assert_equal("You must be logged in to do that", session[:message])
+  end
+
+  # Creating Point Tests
+  def test_create_point_user_2
+    post "/hikes/3", { "date" => "2023-01-14", "mileage" => "13.3", "hike_id" => "3" }, log_in_user_2
+    assert_equal(302, last_response.status)
+    assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
+    assert_equal("Point successfully created", session[:message])
+
+    follow_redirect!
+    assert_includes(last_response.body, "Average Mileage Per Day: 4.43")
+  end
+
+  # date with same date already
+  def test_create_point_with_existing_date
+    post "/hikes/3", { "date" => "2023-01-13", "mileage" => "13.3", "hike_id" => "3" }, log_in_user_2
+    assert_equal(302, last_response.status)
+    assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
+    assert_equal("Each day may only have one point", session[:message])
+
+    follow_redirect!
+    refute_includes(last_response.body, "13.3")
+  end
+
+  # TODO!!!
+  # THIS THROWS ERROR, MISSING VALIDATION
+  def test_create_point_bad_hike_id
+    skip
+    post "/hikes/42", { "date" => "2023-01-13", "mileage" => "13.3", "hike_id" => "3" }, log_in_user_2
+    assert_equal(302, last_response.status)
+    assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
+    assert_equal("Each day may only have one point", session[:message])
+
+    follow_redirect!
+    refute_includes(last_response.body, "13.3")
+  end
+
+  def test_create_point_no_mileages
+    # TODO
   end
 end
