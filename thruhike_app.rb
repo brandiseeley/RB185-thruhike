@@ -41,9 +41,18 @@ def require_login
   redirect "/"
 end
 
+def to_date(string)
+  Date.parse(string)
+end
+
 ### VALIDATION HELPERS ###
 
 def validate_point_details(hike, mileage, date, hike_id)
+  # Check that date is unique
+  points = @manager.all_points_from_hike(hike_id).data
+  return if points.none? { |p| to_date(date) === p.date }
+  session[:message] = "Each day may only have one point"
+  redirect "/hikes/#{hike_id}"
 end
 
 def validate_hike_details(hike_name, start_mileage, finish_mileage, user)
@@ -129,6 +138,7 @@ post "/hikes/new" do
 end
 
 post "/hikes/delete" do
+  require_login unless logged_in?
   hike_id = params[:hike_id].to_i
   validate_hike_to_delete(hike_id, session[:user_id])
   status = @manager.delete_hike(hike_id)
@@ -165,6 +175,7 @@ end
 
 post "/hikes/:hike_id/delete" do
   point_id = params[:point_id]
+  hike_id = params[:hike_id]
 
   attempt = @manager.delete_point(point_id)
   session[:message] = attempt.success ? "Point successfully deleted" : "There was an error deleting point"
