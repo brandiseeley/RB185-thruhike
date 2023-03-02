@@ -20,5 +20,12 @@
       <%= yield %>
     </div>
 
+    <% if logged_in? %>
+      <div class="footer">
+        <form action="/logout" method="GET">
+          <button>Log Out</button>
+        </form>
+      </div>
+    <% end %>
   </body>
 </html>

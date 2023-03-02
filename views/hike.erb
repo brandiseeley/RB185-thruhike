@@ -1,31 +1,62 @@
 <div>
   <h1><%= @hike.name %></h2>
   <section class="statistics">
-  <p>Average Mileage Per Day: <%= @stats.average_mileage_per_day %></p>
-  <p>Miles from Finish: <%= @stats.mileage_from_finish %></p>
-  <p>Start Mileage: <%= @hike.start_mileage%>, Finish Mileage: <%= @hike.finish_mileage %></p>
-  <p>Percent Complete: <%= percent_complete(@points, @hike) %>%</p>
 
+    <table border="1">
+      <caption>Summary</caption>
+      <tbody>
+        <tr>
+          <th>Start Mileage</th>
+          <td><%= @hike.start_mileage%></td>
+        </tr>
+        <tr>
+          <th>Finish Mileage</th>
+          <td><%= @hike.finish_mileage%></td>
+        </tr>
+        <tr>
+          <th>Average Mileage Per Day</th>
+          <td><%= @stats.average_mileage_per_day %></td>
+        </tr>
+        <tr>
+          <th>Miles from Finish</th>
+          <td><%= @stats.mileage_from_finish %></td>
+        </tr>
+        <tr>
+          <th>Percent Complete</th>
+          <td><%= percent_complete(@points, @hike) %>%</td>
+        </tr>
+      </tbody>
+    </table>
+    
   </section>
   <section class="points">
-    <ul>
-    <% @points.each do |point| %>
-    
-      <ul>
-        <li>Date: <%= point.date %></li>
-        <ul>
-          <li>Mile Mark: <%= point.mileage %></li>
-          <li>Miles Hiked: <%= miles_since_last_point(@points, point, @hike) %></li>
-          <li>
-            <form action="/hikes/<%= @hike.id %>/delete" method="POST">
-              <button name="point_id" value="<%= point.id %>">Delete Point</button>
-            </form>
-          </li>
-        </ul>
-      </ul>
 
-    <% end %>
-    <ul>
+    <table border="1">
+      <caption>Points</caption>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Mile Mark</th>
+          <th>Miles Hiked</th>
+          <th>Edit point</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @points.each do |point| %>
+          <tr>
+            <td><%= point.date %></td>
+            <td><%= point.mileage %></td>
+            <td><%= miles_since_last_point(@points, point, @hike) %></td>
+            <td>            
+              <form action="/hikes/<%= @hike.id %>/delete" method="POST">
+                <button name="point_id" value="<%= point.id %>">Delete Point</button>
+              </form>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+
   </section>
   <h2>New Point</h2>
   <section class="point-form">
