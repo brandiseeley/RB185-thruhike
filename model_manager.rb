@@ -47,7 +47,11 @@ class ModelManager
   def one_hike(hike_id)
     attempt = @@database.one_hike(hike_id)
 
-    attempt.data = construct_hike(attempt.data.first) if attempt.success
+    if attempt.data.ntuples > 0
+      attempt.data = construct_hike(attempt.data.first)
+    else
+      attempt.success = false
+    end
     attempt
   end
 
@@ -70,10 +74,12 @@ class ModelManager
   def one_point(point_id)
     attempt = @@database.one_point(point_id)
 
-    if attempt.success
+    if attempt.data.ntuples > 0
       hike_id = attempt.data.first["hike_id"].to_i
       hike = one_hike(hike_id)
       attempt.data = construct_point(attempt.data.first, hike)
+    else
+      attempt.success = false
     end
     attempt
   end
