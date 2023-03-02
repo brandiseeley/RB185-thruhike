@@ -41,23 +41,23 @@ def require_login
   redirect "/"
 end
 
-def to_date(string)
-  Date.parse(string)
-end
-
 ### VALIDATION HELPERS ###
 
 # TODO : validate mileage?
-def validate_point_details(hike, mileage, date, hike_id)
+def validate_point_details(hike, mileage, date, hike_id, user)
   points = @manager.all_points_from_hike(hike_id).data
+  error = false
   if points.any? { |p| to_date(date) === p.date }
     session[:message] = "Each day may only have one point"
-    redirect "/hikes/#{hike_id}"
-  elsif
-    !(hike.start_mileage..hike.finish_mileage).cover?(mileage)
+    error = true
+  elsif !(hike.start_mileage..hike.finish_mileage).cover?(mileage)
     session[:message] = "Mileage must be between #{hike.start_mileage} and #{hike.finish_mileage}"
-    redirect "/hikes/#{hike_id}"
+    error = true
+  elsif !user_owns_hike?(user.id, hike_id)
+    session[:message] = "Permission to edit this hike denied"
+    error = true
   end
+  redirect "/hikes/#{hike_id}" if error
 end
 
 def validate_point_data_types(hike_attempt, mileage, date, hike_id)
@@ -75,33 +75,45 @@ def validate_point_data_types(hike_attempt, mileage, date, hike_id)
   redirect "/hikes/#{hike_id}" if error
 end
 
-def convert_hike_data_types(hike_name, start_mileage, finish_mileage, user)
-  # TODO
+def validate_hike_data_types(hike_name, start_mileage, finish_mileage)
+  error = false
+  unless hike_name && start_mileage && finish_mileage
+    session[:message] = "All fields are required"
+    redirect "/hikes/new"
+  end
+  if hike_name.strip.empty?
+    session[:message] = "Hike name must be non-empty"
+    error = true
+  elsif !is_numeric?(start_mileage)
+    session[:message] = "Invalid Start Mileage"
+    error = true
+  elsif !is_numeric?(finish_mileage)
+    session[:message] = "Invalid Finish Mileage"
+    error = true
+  end
+  redirect "/hikes/new" if error
 end
 
 def validate_hike_details(hike_name, start_mileage, finish_mileage, user)
-  if hike_name.empty?
-    session[:message] = "Hike name must be non-empty"
-    redirect "/hikes/new"
+  error = false
+  if start_mileage < 0 || finish_mileage < 0
+    session[:message] = "Mileages must be non-negative"
+    error = true
   elsif finish_mileage - start_mileage <= 0
     session[:message] = "Finishing mileage must be greater than starting mileage"
-    redirect "/hikes/new"
+    error = true
   elsif duplicate_name?(hike_name, user)
     session[:message] = "You already have a hike titled '#{hike_name}'"
-    redirect "/hikes/new"
+    error = true
   end
+  redirect "/hikes/new" if error
 end
 
 # Ensures hike belongs to currently logged in user
 def validate_hike_to_delete(hike_id, user_id)
-  all_hikes_status = @manager.all_hikes_from_user(user_id)
-  if all_hikes_status.success
-    if all_hikes_status.data.none? { |hike| hike.id == hike_id }
-      session[:message] = "Permission denied, unable to delete hike"
-      redirect "/hikes"
-    end
-  else
-    session[:message] = "There was an error retrieving your hikes"
+  unless user_owns_hike?(user_id, hike_id)
+    session[:message] = "Permission denied, unable to delete hike"
+    redirect "/hikes"
   end
 end
 
@@ -112,6 +124,20 @@ end
 
 def is_numeric?(string)
   string.to_i.to_s == string || string.to_f.to_s == string
+end
+
+def to_date(string)
+  Date.parse(string)
+end
+
+def user_owns_hike?(user_id, hike_id)
+  # binding.pry
+  all_hikes_status = @manager.all_hikes_from_user(user_id)
+  if all_hikes_status.success
+    all_hikes_status.data.any? { |hike| hike.id == hike_id.to_i }
+  else
+    false
+  end
 end
 
 ### FETCHING HELPERS ###
@@ -127,13 +153,13 @@ end
 get "/hikes" do
   require_login unless logged_in?
   @user = logged_in_user
-  # TODO : Handle bad status
   @hikes = @manager.all_hikes_from_user(@user.id).data
   erb :hikes
 end
 
 post "/hikes" do
   user_id = params["user_id"]
+  # TODO : Validate user exists
   session[:user_id] = user_id
   # TODO: validate user exists
   redirect "/hikes"
@@ -153,7 +179,7 @@ post "/hikes/new" do
   finish_mileage = params[:finish_mileage]
   user = logged_in_user
 
-  # TODO : Validate data types and convert
+  validate_hike_data_types(hike_name, start_mileage, finish_mileage)
   start_mileage = start_mileage.to_f
   finish_mileage = finish_mileage.to_f
   
@@ -192,6 +218,7 @@ end
 
 post "/hikes/:hike_id" do
   require_login unless logged_in?
+  user = logged_in_user
   hike_id = params["hike_id"]
   date = params[:date]
   mileage = params[:mileage]
@@ -201,7 +228,7 @@ post "/hikes/:hike_id" do
   hike = hike_attempt.data
   mileage = mileage.to_f
 
-  validate_point_details(hike, mileage, date, hike_id)
+  validate_point_details(hike, mileage, date, hike_id, user)
 
   point = Point.new(hike, mileage, date)
   status = @manager.insert_new_point(point)

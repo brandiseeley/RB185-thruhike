@@ -146,14 +146,14 @@ class AppTest < Minitest::Test
   end
 
   # Create Hike Tests
-  def test_new_hike_user_2
+  def test_create_hike_page
     get "/hikes/new", {}, log_in_user_2
     assert_equal(200, last_response.status)
     assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
     assert_includes(last_response.body, "Enter the Details for Your New Hike")
     assert_includes(last_response.body, "<form action=\"/hikes/new\" method=\"POST\">")
   end
-
+  
   def test_create_new_hike_user_2
     post "/hikes/new", new_hike_params, log_in_user_2
     assert_equal(302, last_response.status)
@@ -163,6 +163,87 @@ class AppTest < Minitest::Test
     follow_redirect!
     assert_equal(200, last_response.status)
     assert_includes(last_response.body, "Long Walk")
+  end
+  
+  def test_create_hike_no_name
+    post "/hikes/new", { "start_mileage" => "0", "finish_mileage" => "100" }, log_in_user_2
+    assert_equal(302, last_response.status)
+    assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
+    assert_equal("All fields are required", session[:message])
+  
+    follow_redirect!
+    assert_equal(200, last_response.status)
+  end
+  
+  def test_create_hike_whitespace_name
+    post "/hikes/new", { "name" => "   ", "start_mileage" => "0", "finish_mileage" => "100" }, log_in_user_2
+    assert_equal(302, last_response.status)
+    assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
+    assert_equal("Hike name must be non-empty", session[:message])
+  
+    follow_redirect!
+    assert_equal(200, last_response.status)
+  end
+  
+  def test_create_hike_nonnumeric_start_mileage
+    post "/hikes/new", { "name" => "Long Walk", "start_mileage" => "string", "finish_mileage" => "100" }, log_in_user_2
+    assert_equal(302, last_response.status)
+    assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
+    assert_equal("Invalid Start Mileage", session[:message])
+  
+    follow_redirect!
+    assert_equal(200, last_response.status)
+  end
+  
+  def test_create_hike_negative_start_mileage
+    post "/hikes/new", { "name" => "Long Walk", "start_mileage" => "-42", "finish_mileage" => "100" }, log_in_user_2
+    assert_equal(302, last_response.status)
+    assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
+    assert_equal("Mileages must be non-negative", session[:message])
+    
+    follow_redirect!
+    assert_equal(200, last_response.status)
+  end
+  
+  def test_create_hike_invalid_finish_mileage
+    post "/hikes/new", { "name" => "Long Walk", "start_mileage" => "23", "finish_mileage" => "string" }, log_in_user_2
+    assert_equal(302, last_response.status)
+    assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
+    assert_equal("Invalid Finish Mileage", session[:message])
+    
+    follow_redirect!
+    assert_equal(200, last_response.status)
+  end
+  
+  def test_create_hike_negative_finish_mileage
+    post "/hikes/new", { "name" => "Long Walk", "start_mileage" => "2", "finish_mileage" => "-100" }, log_in_user_2
+    assert_equal(302, last_response.status)
+    assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
+    assert_equal("Mileages must be non-negative", session[:message])
+    
+    follow_redirect!
+    assert_equal(200, last_response.status)
+  end
+  
+  def test_create_hike_invalid_mileage_range
+    post "/hikes/new", { "name" => "Long Walk", "start_mileage" => "100", "finish_mileage" => "10" }, log_in_user_2
+    assert_equal(302, last_response.status)
+    assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
+    assert_equal("Finishing mileage must be greater than starting mileage", session[:message])
+    
+    follow_redirect!
+    assert_equal(200, last_response.status)
+  end
+  
+  def test_create_hike_duplicate_name
+    post "/hikes/new", { "name" => "Short Hike Incomplete", "start_mileage" => "10", "finish_mileage" => "100" }, log_in_user_2
+    assert_equal(302, last_response.status)
+    assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
+    assert_equal("You already have a hike titled 'Short Hike Incomplete'", session[:message])
+    
+    follow_redirect!
+    assert_equal(200, last_response.status)
+    
   end
 
   # Delete Hike Tests
@@ -251,4 +332,5 @@ class AppTest < Minitest::Test
     follow_redirect!
     refute_includes(last_response.body, "13.3")
   end
+
 end
