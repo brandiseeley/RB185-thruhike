@@ -332,5 +332,13 @@ class AppTest < Minitest::Test
     follow_redirect!
     refute_includes(last_response.body, "13.3")
   end
-
+  
+  # Test statistics
+  def test_miles_hiked
+    get "/hikes/3", {}, log_in_user_2
+    assert_equal(200, last_response.status)
+    assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
+    assert_includes(last_response.body, "<li>Miles Hiked: 5.1</li>")
+    assert_includes(last_response.body, "<li>Miles Hiked: 4.2</li>")
+  end
 end
