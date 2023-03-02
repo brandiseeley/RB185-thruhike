@@ -17,6 +17,17 @@ before do
   @manager = ModelManager.new
 end
 
+# View Helpers
+helpers do
+  def miles_since_last_point(points, point, hike)
+    points = points.reverse
+    return (point.mileage - hike.start_mileage).round(2) if points.find_index(point) == 0
+
+    previous_point = points[points.find_index(point) - 1]
+    (point.mileage - previous_point.mileage).round(2)
+  end
+end
+
 ### USER HELPERS ###
 
 def logged_in_user
@@ -153,13 +164,13 @@ end
 get "/hikes" do
   require_login unless logged_in?
   @user = logged_in_user
+  # TODO : Handle bad status
   @hikes = @manager.all_hikes_from_user(@user.id).data
   erb :hikes
 end
 
 post "/hikes" do
   user_id = params["user_id"]
-  # TODO : Validate user exists
   session[:user_id] = user_id
   # TODO: validate user exists
   redirect "/hikes"

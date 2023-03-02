@@ -4,6 +4,7 @@
   <p>Average Mileage Per Day: <%= @stats.average_mileage_per_day %></p>
   <p>Miles from Finish: <%= @stats.mileage_from_finish %></p>
   <p>Most recent Entry: <%= @points.first.date if !@points.empty? %></p>
+  <p>Start Mileage: <%= @hike.start_mileage%>, Finish Mileage: <%= @hike.finish_mileage %></p>
 
   </section>
   <section class="points">
@@ -14,6 +15,7 @@
         <li>Date: <%= point.date %></li>
         <ul>
           <li>Mile Mark: <%= point.mileage %></li>
+          <li>Miles Hiked: <%= miles_since_last_point(@points, point, @hike) %></li>
           <li>
             <form action="/hikes/<%= @hike.id %>/delete" method="POST">
               <button name="point_id" value="<%= point.id %>">Delete Point</button>
