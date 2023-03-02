@@ -354,7 +354,7 @@ class AppTest < Minitest::Test
     assert(@manager.one_point("13").success)
   end
   
-  def test_delete_non_existant_point
+  def test_delete_non_existent_point
     post "/hikes/3/delete", { "point_id" => "42" }, log_in_user_2
     assert_equal(302, last_response.status)
     assert_equal("text/html;charset=utf-8", last_response["Content-Type"])

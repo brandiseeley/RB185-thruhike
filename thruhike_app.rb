@@ -31,6 +31,10 @@ helpers do
     return 0 if points.empty?
     (points.first.mileage / hike.finish_mileage * 100).round(2)
   end
+
+  def logged_in?
+    session[:user_id]
+  end
 end
 
 ### USER HELPERS ###
@@ -66,8 +70,8 @@ def validate_point_details(hike, mileage, date, hike_id, user)
   if points.any? { |p| to_date(date) === p.date }
     session[:message] = "Each day may only have one point"
     error = true
-  elsif !(hike.start_mileage..hike.finish_mileage).cover?(mileage)
-    session[:message] = "Mileage must be between #{hike.start_mileage} and #{hike.finish_mileage}"
+  elsif !linear_mileage?(date, mileage, points, hike)
+    session[:message] = "Mileage must be linear (get exact dates later)"
     error = true
   elsif !user_owns_hike?(user.id, hike_id)
     session[:message] = "Permission to edit this hike denied"
@@ -133,6 +137,32 @@ def validate_hike_to_delete(hike_id, user_id)
   end
 end
 
+def linear_mileage?(date, mileage, points, hike)
+  date = to_date(date)
+
+  mileage_before = hike.start_mileage
+  
+  points.reverse_each do |point|
+    if point.date <= date
+      mileage_before = point.mileage
+    else
+      break
+    end
+  end
+  
+  mileage_after = hike.finish_mileage
+
+  points.each do |point|
+    if point.date > date
+      mileage_after = point.mileage
+    else
+      break
+    end
+  end
+
+  (mileage_before..mileage_after).cover?(mileage)
+end
+
 def duplicate_name?(hike_name, user)
   all_hikes = @manager.all_hikes_from_user(user.id).data
   all_hikes.any? { |hike| hike.name == hike_name }
@@ -168,6 +198,11 @@ get "/" do
   # TODO : Handle bad status
   @users = @manager.all_users.data
   erb :home
+end
+
+get "/logout" do
+  session[:user_id] = nil
+  redirect "/"
 end
 
 get "/hikes" do
@@ -208,7 +243,7 @@ post "/hikes/new" do
   status = @manager.insert_new_hike(hike)
   if status.success
     session[:message] = "Hike successfully created"
-    redirect "/hikes"
+    redirect "/hikes/#{status.data}"
   else
     session[:message] = "There was an error creating this hike"
   end
