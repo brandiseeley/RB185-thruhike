@@ -333,6 +333,34 @@ class AppTest < Minitest::Test
     refute_includes(last_response.body, "13.3")
   end
   
+  # Test deleting points
+  def test_delete_point_user_2
+    post "/hikes/3/delete", { "point_id" => "13" }, log_in_user_2
+    assert_equal(302, last_response.status)
+    assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
+    assert_equal("Point successfully deleted", session[:message])
+    
+    follow_redirect!
+    refute_includes(last_response.body, "2023-01-13")
+    refute(@manager.one_point("13").success)
+  end
+  
+  def test_delete_point_other_users_hike
+    post "/hikes/1/delete", { "point_id" => "13" }, log_in_user_2
+    assert_equal(302, last_response.status)
+    assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
+    assert_equal("Permission to edit this hike denied", session[:message])
+
+    assert(@manager.one_point("13").success)
+  end
+  
+  def test_delete_non_existant_point
+    post "/hikes/3/delete", { "point_id" => "42" }, log_in_user_2
+    assert_equal(302, last_response.status)
+    assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
+    assert_equal("Permission to edit this hike denied", session[:message])
+  end
+  
   # Test statistics
   def test_miles_hiked
     get "/hikes/3", {}, log_in_user_2
@@ -340,5 +368,14 @@ class AppTest < Minitest::Test
     assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
     assert_includes(last_response.body, "<li>Miles Hiked: 5.1</li>")
     assert_includes(last_response.body, "<li>Miles Hiked: 4.2</li>")
+  end
+  
+  def test_percent_complete
+    get "/hikes/3", {}, log_in_user_2
+    assert_equal(200, last_response.status)
+    assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
+    assert_includes(last_response.body, "Percent Complete: 31.0%")
+    
+    post "/hikes"
   end
 end

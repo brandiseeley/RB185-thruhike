@@ -152,8 +152,8 @@ end
 
 # The status object that is returned by all DatabasePersistence methods
 class LogStatus
-  attr_reader :success, :message, :data
-  attr_writer :data
+  attr_accessor :data, :success
+  attr_reader :message
 
   def initialize(success, message, data = nil)
     @success = success

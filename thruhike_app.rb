@@ -26,6 +26,11 @@ helpers do
     previous_point = points[points.find_index(point) - 1]
     (point.mileage - previous_point.mileage).round(2)
   end
+
+  def percent_complete(points, hike)
+    return 0 if points.empty?
+    (points.first.mileage / hike.finish_mileage * 100).round(2)
+  end
 end
 
 ### USER HELPERS ###
@@ -142,13 +147,17 @@ def to_date(string)
 end
 
 def user_owns_hike?(user_id, hike_id)
-  # binding.pry
   all_hikes_status = @manager.all_hikes_from_user(user_id)
   if all_hikes_status.success
     all_hikes_status.data.any? { |hike| hike.id == hike_id.to_i }
   else
     false
   end
+end
+
+def hike_owns_point?(hike_id, point_id)
+  points = @manager.all_points_from_hike(hike_id)
+  points.data.any? { |point| point.id == point_id.to_i }
 end
 
 ### FETCHING HELPERS ###
@@ -249,8 +258,14 @@ post "/hikes/:hike_id" do
 end
 
 post "/hikes/:hike_id/delete" do
-  point_id = params[:point_id]
+  require_login unless logged_in?
   hike_id = params[:hike_id]
+  point_id = params[:point_id]
+  user = logged_in_user
+  if !hike_owns_point?(hike_id, point_id) || !user_owns_hike?(user.id, hike_id)
+    session[:message] = "Permission to edit this hike denied"
+    redirect "/hikes"
+  end
 
   attempt = @manager.delete_point(point_id)
   session[:message] = attempt.success ? "Point successfully deleted" : "There was an error deleting point"

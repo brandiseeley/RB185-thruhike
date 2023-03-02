@@ -9,7 +9,7 @@
     <div class="header">
       <h2>Hike Hub</h2>
       <% if session[:message] %>
-        <p style="color:orange"><%= session.delete(:message) %></p>
+        <p style="color:orange"><em><%= session.delete(:message) %></em></p>
       <% end %>
     </div>
 
