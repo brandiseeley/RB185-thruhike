@@ -207,12 +207,11 @@ class AppTest < Minitest::Test
     assert_equal(302, last_response.status)
     assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
     assert_equal("Point successfully created", session[:message])
-
+    
     follow_redirect!
     assert_includes(last_response.body, "Average Mileage Per Day: 4.43")
   end
-
-  # date with same date already
+  
   def test_create_point_with_existing_date
     post "/hikes/3", { "date" => "2023-01-13", "mileage" => "13.3", "hike_id" => "3" }, log_in_user_2
     assert_equal(302, last_response.status)
@@ -222,21 +221,34 @@ class AppTest < Minitest::Test
     follow_redirect!
     refute_includes(last_response.body, "13.3")
   end
-
-  # TODO!!!
-  # THIS THROWS ERROR, MISSING VALIDATION
-  def test_create_point_bad_hike_id
-    skip
-    post "/hikes/42", { "date" => "2023-01-13", "mileage" => "13.3", "hike_id" => "3" }, log_in_user_2
+  
+  def test_create_point_no_mileage
+    post "/hikes/3", { "date" => "2023-01-14", "hike_id" => "3" }, log_in_user_2
     assert_equal(302, last_response.status)
     assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
-    assert_equal("Each day may only have one point", session[:message])
-
+    assert_equal("Invalid Mileage", session[:message])
+    
     follow_redirect!
     refute_includes(last_response.body, "13.3")
   end
-
-  def test_create_point_no_mileages
-    # TODO
+  
+  def test_creating_point_no_date
+    post "/hikes/3", { "mileage" => "13.3", "hike_id" => "3" }, log_in_user_2
+    assert_equal(302, last_response.status)
+    assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
+    assert_equal("Invalid Date", session[:message])
+    
+    follow_redirect!
+    refute_includes(last_response.body, "13.3")
+  end
+  
+  def test_create_point_out_of_range
+    post "/hikes/3", { "date" => "2023-01-14", "mileage" => "999.3", "hike_id" => "3" }, log_in_user_2
+    assert_equal(302, last_response.status)
+    assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
+    assert_equal("Mileage must be between 0.0 and 30.0", session[:message])
+    
+    follow_redirect!
+    refute_includes(last_response.body, "13.3")
   end
 end
