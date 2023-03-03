@@ -332,9 +332,39 @@ class AppTest < Minitest::Test
     follow_redirect!
     refute_includes(last_response.body, "13.3")
   end
-
-  # 
   
+  def test_create_point_out_of_date_range
+    post "/hikes/3", { "date" => "2023-01-15", "mileage" => "22.0", "hike_id" => "3" }, log_in_user_2
+    post "/hikes/3", { "date" => "2023-01-14", "mileage" => "28.0", "hike_id" => "3" }, log_in_user_2
+    assert_equal(302, last_response.status)
+    assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
+    assert_equal("Mileage must be ascending or equal from one day to a following day", session[:message])
+    
+    follow_redirect!
+    assert_includes(last_response.body, "22.0")
+    refute_includes(last_response.body, "28.0")
+  end
+  
+  def test_create_point_out_of_date_range_2
+    post "/hikes/3", { "date" => "2023-01-11", "mileage" => "4.9", "hike_id" => "3" }, log_in_user_2
+    assert_equal(302, last_response.status)
+    assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
+    assert_equal("Mileage must be ascending or equal from one day to a following day", session[:message])
+    
+    follow_redirect!
+    refute_includes(last_response.body, "4.9")
+  end
+  
+  def test_create_point_zero_day
+    post "/hikes/3", { "date" => "2023-01-14", "mileage" => "9.3", "hike_id" => "3" }, log_in_user_2
+    assert_equal(302, last_response.status)
+    assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
+    assert_equal("Point successfully created", session[:message])
+    
+    follow_redirect!
+    assert_includes(last_response.body, "31.0%")
+  end
+
   # Test deleting points
   def test_delete_point_user_2
     post "/hikes/3/delete", { "point_id" => "13" }, log_in_user_2
