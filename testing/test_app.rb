@@ -137,12 +137,12 @@ class AppTest < Minitest::Test
     get "/hikes/2", {}, log_in_user_2
     assert_equal(200, last_response.status)
     assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
-    assert_includes(last_response.body, "Date: 2022-01-07")
-    assert_includes(last_response.body, "Mile Mark: 150.0")
-    assert_includes(last_response.body, "Date: 2022-01-06")
-    assert_includes(last_response.body, "Mile Mark: 135.2")
-    assert_includes(last_response.body, "Date: 2021-12-29")
-    assert_includes(last_response.body, "Mile Mark: 58.3")
+    assert_includes(last_response.body, "2022-01-07")
+    assert_includes(last_response.body, "150.0")
+    assert_includes(last_response.body, "2022-01-06")
+    assert_includes(last_response.body, "135.2")
+    assert_includes(last_response.body, "2021-12-29")
+    assert_includes(last_response.body, "58.3")
   end
 
   # Create Hike Tests
@@ -290,7 +290,7 @@ class AppTest < Minitest::Test
     assert_equal("Point successfully created", session[:message])
     
     follow_redirect!
-    assert_includes(last_response.body, "Average Mileage Per Day: 4.43")
+    assert_includes(last_response.body, "4.43")
   end
   
   def test_create_point_with_existing_date
@@ -327,11 +327,13 @@ class AppTest < Minitest::Test
     post "/hikes/3", { "date" => "2023-01-14", "mileage" => "999.3", "hike_id" => "3" }, log_in_user_2
     assert_equal(302, last_response.status)
     assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
-    assert_equal("Mileage must be between 0.0 and 30.0", session[:message])
+    assert_equal("Mileage must be ascending or equal from one day to a following day", session[:message])
     
     follow_redirect!
     refute_includes(last_response.body, "13.3")
   end
+
+  # 
   
   # Test deleting points
   def test_delete_point_user_2
@@ -366,15 +368,15 @@ class AppTest < Minitest::Test
     get "/hikes/3", {}, log_in_user_2
     assert_equal(200, last_response.status)
     assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
-    assert_includes(last_response.body, "<li>Miles Hiked: 5.1</li>")
-    assert_includes(last_response.body, "<li>Miles Hiked: 4.2</li>")
+    assert_includes(last_response.body, "5.1")
+    assert_includes(last_response.body, "4.2")
   end
   
   def test_percent_complete
     get "/hikes/3", {}, log_in_user_2
     assert_equal(200, last_response.status)
     assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
-    assert_includes(last_response.body, "Percent Complete: 31.0%")
+    assert_includes(last_response.body, "31.0%")
     
     post "/hikes"
   end

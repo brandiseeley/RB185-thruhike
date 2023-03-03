@@ -71,7 +71,7 @@ def validate_point_details(hike, mileage, date, hike_id, user)
     session[:message] = "Each day may only have one point"
     error = true
   elsif !linear_mileage?(date, mileage, points, hike)
-    session[:message] = "Mileage must be linear (get exact dates later)"
+    session[:message] = "Mileage must be ascending or equal from one day to a following day"
     error = true
   elsif !user_owns_hike?(user.id, hike_id)
     session[:message] = "Permission to edit this hike denied"
