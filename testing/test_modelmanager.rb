@@ -151,6 +151,24 @@ class ModelManagerTest < MiniTest::Test
     @manager.mark_hike_complete(@incomplete_hike_zero_start)
 
     updated_hike = @manager.one_hike(@incomplete_hike_zero_start.id).data
-    assert_equal(true, updated_hike.completed)
+    assert(updated_hike.completed)
+  end
+
+  def test_update_hike_name
+    @manager.update_hike_name(@incomplete_hike_zero_start.id, "A walk about")
+    updated_hike = @manager.one_hike(@incomplete_hike_zero_start.id).data
+    assert_equal("A walk about", updated_hike.name)
+  end
+
+  def test_update_hike_start_mileage
+    @manager.update_hike_start_mileage(@incomplete_hike_zero_start.id, 22.0)
+    updated_hike = @manager.one_hike(@incomplete_hike_zero_start.id).data
+    assert_equal(22.0, updated_hike.start_mileage)  
+  end
+
+  def test_update_hike_finish_mileage
+    @manager.update_hike_finish_mileage(@incomplete_hike_zero_start.id, 3000.0)
+    updated_hike = @manager.one_hike(@incomplete_hike_zero_start.id).data
+    assert_equal(3000.0, updated_hike.finish_mileage)  
   end
 end
