@@ -67,14 +67,14 @@ module Validate
     elsif all_hikes.any? do |hike|
          new_hike_name == hike.name && hike_id != hike.id
        end
-      session[:message] = "You already have a hike titled '#{new_hike_name}"
+      session[:message] = "You already have a hike titled '#{new_hike_name}'"
       error = true
     elsif mileage_confict_with_existing_points?(hike_id, new_start_mileage, new_finish_mileage)
       session[:message] = "There are existing points within this mileage range. Either change start and finish mileage or delete conficting points and try again"
       error = true
     end
     
-    redirect back if error
+    redirect "/hikes/#{hike_id}/edit" if error
   end
 
   def validate_point_details(hike, mileage, date, hike_id, user)
