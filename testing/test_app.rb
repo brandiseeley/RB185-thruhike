@@ -393,6 +393,101 @@ class AppTest < Minitest::Test
     assert_equal("Permission to edit this hike denied", session[:message])
   end
   
+  # Test editing Hike
+  def test_edit_name
+    post "/hikes/3/edit", { "name" => "A walk about", "start_mileage" => "0.0", "finish_mileage" => "30.0" }, log_in_user_2
+    assert_equal(302, last_response.status)
+    assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
+    assert_equal("Hike successfully edited", session[:message])
+    
+    follow_redirect!
+    assert_includes(last_response.body, "A walk about")
+  end
+  
+  def test_edit_start_mileage
+    post "/hikes/3/edit", { "name" => "Short Hike Incomplete", "start_mileage" => "3.3", "finish_mileage" => "30.0" }, log_in_user_2
+    assert_equal(302, last_response.status)
+    assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
+    assert_equal("Hike successfully edited", session[:message])
+    
+    follow_redirect!
+    assert_includes(last_response.body, "3.3")
+    assert_includes(last_response.body, "3.0")
+  end
+  
+  def test_edit_finish_mileage
+    post "/hikes/3/edit", { "name" => "Short Hike Incomplete", "start_mileage" => "0.0", "finish_mileage" => "42.0" }, log_in_user_2
+    assert_equal(302, last_response.status)
+    assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
+    assert_equal("Hike successfully edited", session[:message])
+    
+    follow_redirect!
+    assert_includes(last_response.body, "42.0")
+    assert_includes(last_response.body, "22.14%")
+  end
+  
+  def test_edit_all_fields
+    post "/hikes/3/edit", { "name" => "A walk about", "start_mileage" => "3.3", "finish_mileage" => "42.0" }, log_in_user_2
+    assert_equal(302, last_response.status)
+    assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
+    assert_equal("Hike successfully edited", session[:message])
+    
+    follow_redirect!
+    assert_includes(last_response.body, "A walk about")
+    assert_includes(last_response.body, "3.3")
+    assert_includes(last_response.body, "42.0")
+    assert_includes(last_response.body, "3.0")
+    assert_includes(last_response.body, "15.5%")
+  end
+
+  def test_edit_with_duplicate_name
+    post "/hikes/3/edit", { "name" => "Complete Hike Non-zero Start", "start_mileage" => "0.0", "finish_mileage" => "30.0" }, log_in_user_2
+    assert_equal(302, last_response.status)
+    assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
+    assert_equal("You already have a hike titled 'Complete Hike Non-zero Start'", session[:message])
+    
+    follow_redirect!
+    assert_includes(last_response.body, "Short Hike Incomplete")
+  end
+  
+  def test_edit_with_points_conflict_start_mileage
+    post "/hikes/3/edit", { "name" => "Short Hike Incomplete", "start_mileage" => "5.0", "finish_mileage" => "30.0" }, log_in_user_2
+    assert_equal(302, last_response.status)
+    assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
+    assert_equal("There are existing points within this mileage range. Either change start and finish mileage or delete conficting points and try again", session[:message])
+
+    follow_redirect!
+    assert_includes(last_response.body, "0.0")
+  end
+  
+  def test_edit_with_points_conflict_finish_mileage
+    post "/hikes/3/edit", { "name" => "Short Hike Incomplete", "start_mileage" => "0.0", "finish_mileage" => "5.0" }, log_in_user_2
+    assert_equal(302, last_response.status)
+    assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
+    assert_equal("There are existing points within this mileage range. Either change start and finish mileage or delete conficting points and try again", session[:message])
+    
+    follow_redirect!
+    assert_includes(last_response.body, "30.0")
+  end
+  
+  def test_edit_finish_greater_than_start
+    post "/hikes/3/edit", { "name" => "Short Hike Incomplete", "start_mileage" => "50.0", "finish_mileage" => "25.0" }, log_in_user_2
+    assert_equal(302, last_response.status)
+    assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
+    assert_equal("Finishing mileage must be greater than starting mileage", session[:message])
+    
+    follow_redirect!
+    assert_includes(last_response.body, "0.0")
+    assert_includes(last_response.body, "30.0")
+  end
+  
+  def test_edit_empty_fields
+    post "/hikes/3/edit", {}, log_in_user_2
+    assert_equal(302, last_response.status)
+    assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
+    assert_equal("All fields are required", session[:message])
+  end
+    
   # Test statistics
   def test_miles_hiked
     get "/hikes/3", {}, log_in_user_2
