@@ -91,13 +91,15 @@ class DatabasePersistence
 
   def average_mileage_per_day(hike)
     sql = <<-SQL
-          SELECT ROUND(AVG(days_mileage), 2) FROM (
-            SELECT CASE
-              WHEN (points.mileage - LAG(points.mileage, 1) OVER (ORDER BY date)) IS NULL THEN points.mileage
-              ELSE points.mileage - LAG(points.mileage, 1) OVER (ORDER BY date) END AS days_mileage
-            FROM points JOIN hikes ON points.hike_id = hikes.id
-            WHERE hike_id = $1
-            ORDER BY date ) AS mileage_per_day;
+          select round( ( max(mileage) - max(start_mileage) ) / 
+          CASE
+            WHEN min(mileage) = max(start_mileage)
+              THEN max(date) - min(date)
+            ELSE max(date) - min(date) + 1
+          END, 2)
+
+          FROM hikes JOIN points ON hikes.id = points.hike_id  
+          WHERE hikes.id = $1;
     SQL
     query(sql, hike.id)
   end
