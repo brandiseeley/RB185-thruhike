@@ -31,7 +31,7 @@ helpers do
   def percent_complete(points, hike)
     return 0 if points.empty?
 
-    (points.first.mileage / hike.finish_mileage * 100).round(2)
+    ( ( points.first.mileage - hike.start_mileage ) / ( hike.finish_mileage - hike.start_mileage ) * 100).round(2)
   end
 end
 
@@ -208,5 +208,6 @@ post "/hikes/:hike_id/edit" do
   @manager.update_hike_start_mileage(hike_id, new_start_mileage)
   @manager.update_hike_finish_mileage(hike_id, new_finish_mileage)
 
+  session[:message] = "Hike successfully edited"
   redirect "/hikes/#{hike_id}"
 end
