@@ -74,6 +74,21 @@ class DatabasePersistence
     query(sql, point_id)
   end
 
+  def update_hike_name(hike_id, new_name)
+    sql = "UPDATE hikes SET name = $1 WHERE id = $2"
+    query(sql, new_name, hike_id)
+  end
+
+  def update_hike_start_mileage(hike_id, new_start_mileage)
+    sql = "UPDATE hikes SET start_mileage = $1 WHERE id = $2"
+    query(sql, new_start_mileage, hike_id)
+  end
+
+  def update_hike_finish_mileage(hike_id, new_finish_mileage)
+    sql = "UPDATE hikes SET finish_mileage = $1 WHERE id = $2"
+    query(sql, new_finish_mileage, hike_id)
+  end
+
   def average_mileage_per_day(hike)
     sql = <<-SQL
           SELECT ROUND(AVG(days_mileage), 2) FROM (

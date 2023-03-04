@@ -263,7 +263,7 @@ class AppTest < Minitest::Test
 
     assert_equal(302, last_response.status)
     assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
-    assert_equal("Permission denied, unable to delete hike", session[:message])
+    assert_equal("Permission denied, unable to edit hike", session[:message])
   end
 
   def test_deleting_non_existant_hike_user_2
@@ -271,7 +271,7 @@ class AppTest < Minitest::Test
 
     assert_equal(302, last_response.status)
     assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
-    assert_equal("Permission denied, unable to delete hike", session[:message])
+    assert_equal("Permission denied, unable to edit hike", session[:message])
   end
 
   def test_deleting_hike_not_logged_in

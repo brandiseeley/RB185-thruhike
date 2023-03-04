@@ -1,0 +1,24 @@
+<h1>Edit the Details for <%= @hike.name %></h1>
+
+<form action="/hikes/<%= @hike.id %>/edit" method="POST">
+  <label for="name">Edit Name: </label>
+  <input type="text" name="name" value="<%= @hike.name %>"required>
+
+  <label for="start_mileage">Edit the starting mileage: </label>
+  <input type="number"
+         name="start_mileage"
+         min="0"
+         step="0.1"
+         value="<%= @hike.start_mileage %>"
+         required>
+
+  <label for="finish_mileage">Edit the end mileage: </label>
+  <input type="number"
+         name="finish_mileage"
+         min="0"
+         step="0.1"
+         value="<%= @hike.finish_mileage %>"
+         required>
+
+  <button>Update Hike</button>
+</form>

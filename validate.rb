@@ -15,12 +15,12 @@ module Validate
       session[:message] = "Invalid Finish Mileage"
       error = true
     end
-    redirect "/hikes/new" if error
+    redirect back if error
   end
 
-  def validate_hike_to_delete(hike_id, user_id)
+  def validate_hike_to_edit(hike_id, user_id)
     unless user_owns_hike?(user_id, hike_id)
-      session[:message] = "Permission denied, unable to delete hike"
+      session[:message] = "Permission denied, unable to edit hike"
       redirect "/hikes"
     end
   end
@@ -42,10 +42,10 @@ module Validate
 
   def validate_hike_details(hike_name, start_mileage, finish_mileage, user)
     error = false
-    if start_mileage < 0 || finish_mileage < 0
+    if !non_negative?(start_mileage, finish_mileage)
       session[:message] = "Mileages must be non-negative"
       error = true
-    elsif finish_mileage - start_mileage <= 0
+    elsif !finish_greater_than_start?(start_mileage, finish_mileage)
       session[:message] = "Finishing mileage must be greater than starting mileage"
       error = true
     elsif duplicate_name?(hike_name, user)
@@ -53,6 +53,28 @@ module Validate
       error = true
     end
     redirect "/hikes/new" if error
+  end
+
+  def validate_edit_hike_details(user, hike_id, new_hike_name, new_start_mileage, new_finish_mileage)
+    all_hikes = @manager.all_hikes_from_user(user.id).data
+    error = false
+    if !non_negative?(new_start_mileage, new_finish_mileage)
+      session[:message] = "Mileages must be non-negative"
+      error = true
+    elsif !finish_greater_than_start?(new_start_mileage, new_finish_mileage)
+      session[:message] = "Finishing mileage must be greater than starting mileage"
+      error = true
+    elsif all_hikes.any? do |hike|
+         new_hike_name == hike.name && hike_id != hike.id
+       end
+      session[:message] = "You already have a hike titled '#{new_hike_name}"
+      error = true
+    elsif mileage_confict_with_existing_points?(hike_id, new_start_mileage, new_finish_mileage)
+      session[:message] = "There are existing points within this mileage range. Either change start and finish mileage or delete conficting points and try again"
+      error = true
+    end
+    
+    redirect back if error
   end
 
   def validate_point_details(hike, mileage, date, hike_id, user)
@@ -78,10 +100,25 @@ module Validate
   
   private
 
+  def mileage_confict_with_existing_points?(hike_id, start_mileage, finish_mileage)
+    # binding.pry
+    all_points = @manager.all_points_from_hike(hike_id).data
+    !all_points.all? do |point|
+      (start_mileage.to_f..finish_mileage.to_f).cover?(point.mileage.to_f)
+    end
+  end
+
+  def non_negative?(*numbers)
+    numbers.all? { |n| n.to_f >= 0 }
+  end
+
+  def finish_greater_than_start?(start, finish)
+    finish.to_f > start.to_f
+  end
+
   def is_numeric?(string)
     string.to_i.to_s == string || string.to_f.to_s == string
   end
-
 
   def duplicate_name?(hike_name, user)
     all_hikes = @manager.all_hikes_from_user(user.id).data

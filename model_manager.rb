@@ -47,7 +47,7 @@ class ModelManager
   def one_hike(hike_id)
     attempt = @@database.one_hike(hike_id)
 
-    if attempt.data.ntuples > 0
+    if attempt.data.ntuples.positive?
       attempt.data = construct_hike(attempt.data.first)
     else
       attempt.success = false
@@ -74,7 +74,7 @@ class ModelManager
   def one_point(point_id)
     attempt = @@database.one_point(point_id)
 
-    if attempt.data.ntuples > 0
+    if attempt.data.ntuples.positive?
       hike_id = attempt.data.first["hike_id"].to_i
       hike = one_hike(hike_id)
       attempt.data = construct_point(attempt.data.first, hike)
@@ -148,6 +148,18 @@ class ModelManager
     @@database.delete_point(point_id)
   end
 
+  def update_hike_name(hike_id, new_name)
+    @@database.update_hike_name(hike_id, new_name)
+  end
+
+  def update_hike_start_mileage(hike_id, new_start_mileage)
+    @@database.update_hike_start_mileage(hike_id, new_start_mileage)
+  end
+
+  def update_hike_finish_mileage(hike_id, new_finish_mileage)
+    @@database.update_hike_finish_mileage(hike_id, new_finish_mileage)
+  end
+
   def hike_stats(hike)
     HikeStats.new(hike, self)
   end
@@ -172,7 +184,6 @@ class ModelManager
   end
 
   def construct_point(row, hike)
-
     Point.new(hike,
               row["mileage"].to_f,
               DateTime.parse(row["date"]).to_date,

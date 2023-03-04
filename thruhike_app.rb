@@ -11,7 +11,7 @@ require_relative "validate"
 configure do
   enable :sessions
   set :session_secret, SecureRandom.hex(32)
-  also_reload "database_persistence.rb", "model_manager.rb", "thruhike.rb" if development?
+  also_reload "database_persistence.rb", "model_manager.rb", "thruhike.rb", "validate.rb" if development?
 end
 
 before do
@@ -127,7 +127,7 @@ end
 post "/hikes/delete" do
   require_login unless logged_in?
   hike_id = params[:hike_id].to_i
-  validate_hike_to_delete(hike_id, session[:user_id])
+  validate_hike_to_edit(hike_id, session[:user_id])
   status = @manager.delete_hike(hike_id)
 
   session[:message] = status.success ? "Hike successfully deleted" : "There was an error deleting hike"
@@ -178,5 +178,35 @@ post "/hikes/:hike_id/delete" do
 
   attempt = @manager.delete_point(point_id)
   session[:message] = attempt.success ? "Point successfully deleted" : "There was an error deleting point"
+  redirect "/hikes/#{hike_id}"
+end
+
+get "/hikes/:hike_id/edit" do
+  require_login unless logged_in?
+  user = logged_in_user
+  hike_id = params["hike_id"].to_i
+  validate_hike_to_edit(hike_id, user.id)
+  @hike = @manager.one_hike(hike_id).data
+  erb :edit_hike
+end
+
+post "/hikes/:hike_id/edit" do
+  require_login unless logged_in?
+  user = logged_in_user
+  hike_id = params[:hike_id].to_i
+  validate_hike_to_edit(hike_id, user.id)
+  @hike = @manager.one_hike(hike_id).data
+
+  new_hike_name = params["name"]
+  new_start_mileage = params["start_mileage"]
+  new_finish_mileage = params["finish_mileage"]
+  validate_hike_data_types(new_hike_name, new_start_mileage, new_finish_mileage)
+
+  validate_edit_hike_details(user, hike_id, new_hike_name, new_start_mileage, new_finish_mileage)
+
+  @manager.update_hike_name(hike_id, new_hike_name)
+  @manager.update_hike_start_mileage(hike_id, new_start_mileage)
+  @manager.update_hike_finish_mileage(hike_id, new_finish_mileage)
+
   redirect "/hikes/#{hike_id}"
 end
