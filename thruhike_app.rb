@@ -112,14 +112,13 @@ post "/hikes/new" do
   start_mileage = start_mileage.to_f
   finish_mileage = finish_mileage.to_f
 
-  validate_hike_details(hike_name, start_mileage, finish_mileage, user)
   hike = Hike.new(user, start_mileage, finish_mileage, hike_name, false)
   status = @manager.insert_new_hike(hike)
   if status.success
     session[:message] = "Hike successfully created"
     redirect "/hikes/#{status.data}"
   else
-    session[:message] = "There was an error creating this hike"
+    session[:message] = status.message
   end
   redirect "/hikes/new"
 end
@@ -156,13 +155,12 @@ post "/hikes/:hike_id" do
   validate_point_data_types(hike_attempt, mileage, date, hike_id)
   hike = hike_attempt.data
   mileage = mileage.to_f
-
-  validate_point_details(hike, mileage, date, hike_id, user)
+  date = Date.parse(date)
 
   point = Point.new(hike, mileage, date)
   status = @manager.insert_new_point(point)
 
-  session[:message] = status.success ? "Point successfully created" : "There was an error creating point"
+  session[:message] = status.success ? "Point successfully created" : status.message
   redirect "/hikes/#{hike_id}"
 end
 

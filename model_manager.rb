@@ -109,6 +109,9 @@ class ModelManager
 
   # Returns id assigned by database
   def insert_new_hike(hike)
+    validity_status = validate_hike_details(hike)
+    return validity_status unless validity_status.success
+
     attempt = @@database.insert_new_hike(hike)
 
     if attempt.success
@@ -120,6 +123,9 @@ class ModelManager
 
   # Returns id assigned by database
   def insert_new_point(point)
+    validity_status = validate_point_details(point)
+    return validity_status unless validity_status.success
+
     attempt = @@database.insert_new_point(point)
 
     if attempt.success
@@ -165,6 +171,98 @@ class ModelManager
   end
 
   private
+
+  # Validation Helpers
+  def validate_hike_details(hike)
+    status = LogStatus.new(true, "okay", nil)
+
+    if !non_negative?(hike.start_mileage, hike.finish_mileage)
+      status.message = "Mileages must be non-negative"
+      status.success = false
+    elsif !finish_greater_than_start?(hike.start_mileage, hike.finish_mileage)
+      status.message = "Finishing mileage must be greater than starting mileage"
+      status.success = false
+    elsif duplicate_name?(hike.name, hike.user)
+      status.message = "You already have a hike titled '#{hike.name}'"
+      status.success = false
+    end
+
+    status
+  end
+
+  def validate_point_details(point)
+    status = LogStatus.new(true, "okay", nil)
+
+    points = all_points_from_hike(point.hike.id).data
+    hike = point.hike
+
+    # if points.any? { |p| to_date(point.date) === p.date }
+    if points.any? { |p| point.date === p.date }
+      status.message = "Each day may only have one point"
+      status.success = false
+    elsif !validate_linear_mileage?(point.date, point.mileage, points, hike)
+      status.message = "Mileage must be ascending or equal from one day to a following day"
+      status.success = false
+    elsif !user_owns_hike?(hike.user.id, point.hike.id)
+      status.message = "Permission to edit this hike denied"
+      status.success = false
+    end
+
+    status
+  end
+
+  def validate_linear_mileage?(date, mileage, points, hike)
+    # date = to_date(date)
+  
+    mileage_before = hike.start_mileage
+    
+    points.reverse_each do |point|
+      if point.date <= date
+        mileage_before = point.mileage
+      else
+        break
+      end
+    end
+    
+    mileage_after = hike.finish_mileage
+  
+    points.each do |point|
+      if point.date > date
+        mileage_after = point.mileage
+      else
+        break
+      end
+    end
+  
+    (mileage_before..mileage_after).cover?(mileage)
+  end
+
+  def user_owns_hike?(user_id, hike_id)
+    all_hikes_status = all_hikes_from_user(user_id)
+    if all_hikes_status.success
+      all_hikes_status.data.any? { |hike| hike.id == hike_id.to_i }
+    else
+      false
+    end
+  end
+ 
+  def to_date(string)
+    Date.parse(string)
+  end
+
+  def non_negative?(*numbers)
+    numbers.all? { |n| n.to_f >= 0 }
+  end
+
+  def finish_greater_than_start?(start, finish)
+    finish.to_f > start.to_f
+  end
+
+  def duplicate_name?(hike_name, user)
+    all_hikes = all_hikes_from_user(user.id).data
+    all_hikes.any? { |hike| hike.name == hike_name }
+  end
+
 
   def construct_user(row)
     User.new(row["name"],

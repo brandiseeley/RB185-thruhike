@@ -74,7 +74,7 @@ class ModelManagerTest < MiniTest::Test
 
     status = @manager.insert_new_point(point)
     assert_equal(false, status.success)
-    assert_includes(status.message, 'null value in column "hike_id" of relation "points" violates not-null constraint')
+    assert_includes(status.message, "Permission to edit this hike denied")
   end
   
   def test_adding_hike_to_nonexistant_user

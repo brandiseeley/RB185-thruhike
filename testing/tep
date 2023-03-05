@@ -1,0 +1,24 @@
+
+[1mFrom:[0m /home/brandi/launchschool/RB185/thruhike/model_manager.rb:203 ModelManager#validate_point_details:
+
+    [1;34m193[0m: [32mdef[0m [1;34mvalidate_point_details[0m(point)
+    [1;34m194[0m:   status = [1;34;4mLogStatus[0m.new([1;36mtrue[0m, [31m[1;31m"[0m[31mokay[1;31m"[0m[31m[0m, [1;36mnil[0m)
+    [1;34m195[0m: 
+    [1;34m196[0m:   points = all_points_from_hike(point.hike.id).data
+    [1;34m197[0m:   hike = one_hike(point.hike.id)
+    [1;34m198[0m: 
+    [1;34m199[0m:   [1;34m# if points.any? { |p| to_date(point.date) === p.date }[0m
+    [1;34m200[0m:   [32mif[0m points.any? { |p| point.date === p.date }
+    [1;34m201[0m:     status.message = [31m[1;31m"[0m[31mEach day may only have one point[1;31m"[0m[31m[0m
+    [1;34m202[0m:     status.success = [1;36mfalse[0m
+ => [1;34m203[0m:   [32melsif[0m !validate_linear_mileage?(point.date, point.mileage, points, hike)
+    [1;34m204[0m:     status.message = [31m[1;31m"[0m[31mMileage must be ascending or equal from one day to a following day[1;31m"[0m[31m[0m
+    [1;34m205[0m:     status.success = [1;36mfalse[0m
+    [1;34m206[0m:   [32melsif[0m !user_owns_hike?(point.user_id, point.hike.id)
+    [1;34m207[0m:     status.message = [31m[1;31m"[0m[31mPermission to edit this hike denied[1;31m"[0m[31m[0m
+    [1;34m208[0m:     status.success = [1;36mfalse[0m
+    [1;34m209[0m:   [32mend[0m
+    [1;34m210[0m: 
+    [1;34m211[0m:   status
+    [1;34m212[0m: [32mend[0m
+
