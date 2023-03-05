@@ -97,6 +97,35 @@ class ModelManagerTest < MiniTest::Test
     assert_equal(8.56, status.data)
   end
 
+  def test_average_mileage_per_day_non_zero_start
+    status = @manager.average_mileage_per_day(@complete_hike_non_zero_start)
+    assert_equal(10.0, status.data)
+    
+    @manager.delete_point(@user2, 12)
+    status = @manager.average_mileage_per_day(@complete_hike_non_zero_start)
+    assert_equal(9.47, status.data)
+  end
+
+  def test_average_mileage_per_day_no_points
+    new_hike = Hike.new(@user1, 0.0, 100.0, "No Points", false)
+    @manager.insert_new_hike(new_hike)
+    status = @manager.average_mileage_per_day(new_hike)
+    assert_equal(0.0, status.data)
+  end
+
+  def test_average_mileage_per_day_points_same_as_start_mileage
+    new_hike = Hike.new(@user1, 13.0, 100.0, "No Points", false)
+    @manager.insert_new_hike(new_hike)
+  
+    @manager.insert_new_point(Point.new(new_hike, 13.0, Date.today - 1))
+    status = @manager.average_mileage_per_day(new_hike)
+    assert_equal(0.0, status.data)
+    
+    @manager.insert_new_point(Point.new(new_hike, 13.0, Date.today))
+    status = @manager.average_mileage_per_day(new_hike)
+    assert_equal(0.0, status.data)
+  end
+
   def test_mileage_to_finish
     status = @manager.mileage_from_finish(@incomplete_hike_zero_start)
     assert_equal(2178.6, status.data)

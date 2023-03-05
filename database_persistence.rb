@@ -89,8 +89,6 @@ class DatabasePersistence
     query(sql, new_finish_mileage, hike_id)
   end
 
-  # This is throwing a zero division error When there is a point with mileage
-  # equal to the start mileage, but only when that is the only point
   def average_mileage_per_day(hike)
     points_attempt = all_points_from_hike(hike.id)
     return points_attempt unless points_attempt.success
@@ -98,7 +96,7 @@ class DatabasePersistence
     return query("SELECT 0.0") if points_attempt.data.ntuples.zero?
 
     mileages = points_attempt.data.field_values("mileage")
-    return query("SELECT 0.0") if mileages.all? { |mileage| mileage == hike.start_mileage }
+    return query("SELECT 0.0") if mileages.all? { |mileage| mileage.to_f == hike.start_mileage }
 
     sql = <<-SQL
           select round( ( max(mileage) - max(start_mileage) ) / 
