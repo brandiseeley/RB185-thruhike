@@ -11,13 +11,13 @@ class DatabasePersistence
   def query(statement, *params)
     data = @@database.exec_params(statement, params)
   rescue PG::UniqueViolation => e
-    LogStatus.new(false, e.message)
+    Status.failure(e.message)
   rescue PG::CheckViolation => e
-    LogStatus.new(false, e.message)
+    Status.failure(e.message)
   rescue PG::NotNullViolation => e
-    LogStatus.new(false, e.message)
+    Status.failure(e.message)
   else
-    LogStatus.new(true, "Okay", data)
+    Status.success(data)
   end
 
   def insert_new_hike(hike)
@@ -165,17 +165,26 @@ class DatabasePersistence
   end
 
   def length_of_hike(hike)
-    LogStatus.new(true, "okay", hike.finish_mileage - hike.start_mileage)
+    Status.new(true, "okay", hike.finish_mileage - hike.start_mileage)
   end
 end
 
+# TODO : Class methods to help construct common types
 # The status object that is returned by all DatabasePersistence methods
-class LogStatus
+class Status
   attr_accessor :data, :success, :message
 
-  def initialize(success, message, data = nil)
+  def initialize(success, message, data)
     @success = success
     @message = message
     @data = data
+  end
+
+  def self.success(data = nil)
+    new(true, nil, data)
+  end
+
+  def self.failure(message)
+    new(false, message, nil)
   end
 end

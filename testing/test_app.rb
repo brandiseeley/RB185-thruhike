@@ -381,7 +381,7 @@ class AppTest < Minitest::Test
     post "/hikes/1/delete", { "point_id" => "1" }, log_in_user_2
     assert_equal(302, last_response.status)
     assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
-    assert_equal("Permission to edit this hike denied", session[:message])
+    assert_equal("Permission denied, unable to edit hike", session[:message])
 
     assert(@manager.one_point("13").success)
   end
@@ -390,7 +390,7 @@ class AppTest < Minitest::Test
     post "/hikes/3/delete", { "point_id" => "42" }, log_in_user_2
     assert_equal(302, last_response.status)
     assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
-    assert_equal("Permission to edit this hike denied", session[:message])
+    assert_equal("Permission denied, unable to edit hike", session[:message])
   end
   
   # Test editing Hike
