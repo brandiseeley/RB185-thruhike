@@ -76,7 +76,7 @@ class ModelManager
 
     if attempt.data.ntuples.positive?
       hike_id = attempt.data.first["hike_id"].to_i
-      hike = one_hike(hike_id)
+      hike = one_hike(hike_id).data
       attempt.data = construct_point(attempt.data.first, hike)
     else
       attempt.success = false
@@ -146,24 +146,50 @@ class ModelManager
     attempt
   end
 
-  def delete_hike(hike_id)
-    @@database.delete_hike(hike_id)
+  def delete_hike(hike_id, user)
+    validity_status = validate_hike_to_edit(hike_id, user.id)
+    return validity_status unless validity_status.success
+
+    delete_status = @@database.delete_hike(hike_id)
+    return LogStatus.new(true, "okay") if delete_status.success
+
+    return LogStatus.new(false, "There was an error editing this hike")
   end
 
-  def delete_point(point_id)
-    @@database.delete_point(point_id)
+  def delete_point(user, point_id)
+    validity_status = validate_point_to_delete(user, point_id)
+    return validity_status unless validity_status.success
+
+    delete_status = @@database.delete_point(point_id)
+    return LogStatus.new(true, "okay") if delete_status.success
+
+    LogStatus.new(false, "There was an error editing this hike")
   end
 
-  def update_hike_name(hike_id, new_name)
-    @@database.update_hike_name(hike_id, new_name)
+  def update_hike_details(user, hike_id, new_hike_name, new_start_mileage, new_finish_mileage)
+    validity_status = validate_edit_hike_details(user, hike_id, new_hike_name, new_start_mileage, new_finish_mileage)
+    return validity_status unless validity_status.success
+
+    name_status = @@database.update_hike_name(hike_id, new_hike_name)
+    start_status = @@database.update_hike_start_mileage(hike_id, new_start_mileage)
+    finish_status = @@database.update_hike_finish_mileage(hike_id, new_finish_mileage)
+
+    if name_status.success && start_status.success && finish_status.success
+      LogStatus.new(true, "okay")
+    else
+      LogStatus.new(false, "There was an error editing this hike")
+    end
   end
 
-  def update_hike_start_mileage(hike_id, new_start_mileage)
-    @@database.update_hike_start_mileage(hike_id, new_start_mileage)
-  end
+  def validate_hike_to_edit(hike_id, user_id)
+    status = LogStatus.new(true, "okay")
 
-  def update_hike_finish_mileage(hike_id, new_finish_mileage)
-    @@database.update_hike_finish_mileage(hike_id, new_finish_mileage)
+    unless user_owns_hike?(user_id, hike_id)
+      status.message = "Permission denied, unable to edit hike"
+      status.success = false
+    end
+
+    status
   end
 
   def hike_stats(hike)
@@ -190,13 +216,32 @@ class ModelManager
     status
   end
 
+  def validate_point_to_delete(user, point_id)
+    status = LogStatus.new(true, "okay")
+
+    point_attempt = one_point(point_id)
+    unless point_attempt.success
+      status.success = false
+      status.message = "Permission to edit this hike denied"
+      return status
+    end
+
+    point = point_attempt.data
+
+    unless user_owns_hike?(user.id, point.hike.id) && hike_owns_point?(point.hike.id, point_id)
+      status.success = false
+      status.message = "Permission to edit this hike denied"
+    end
+
+    status
+  end
+
   def validate_point_details(point)
     status = LogStatus.new(true, "okay", nil)
 
     points = all_points_from_hike(point.hike.id).data
     hike = point.hike
 
-    # if points.any? { |p| to_date(point.date) === p.date }
     if points.any? { |p| point.date === p.date }
       status.message = "Each day may only have one point"
       status.success = false
@@ -211,29 +256,53 @@ class ModelManager
     status
   end
 
+  def validate_edit_hike_details(user, hike_id, new_hike_name, new_start_mileage, new_finish_mileage)
+    status = LogStatus.new(true, "okay")
+    all_hikes = all_hikes_from_user(user.id).data
+
+    if !non_negative?(new_start_mileage, new_finish_mileage)
+      status.message = "Mileages must be non-negative"
+      status.success = false
+    elsif !finish_greater_than_start?(new_start_mileage, new_finish_mileage)
+      status.message = "Finishing mileage must be greater than starting mileage"
+      status.success = false
+    elsif all_hikes.any? do |hike|
+            new_hike_name == hike.name && hike_id != hike.id
+          end
+      status.message = "You already have a hike titled '#{new_hike_name}'"
+      status.success = false
+    elsif mileage_confict_with_existing_points?(hike_id, new_start_mileage, new_finish_mileage)
+      status.message = "There are existing points within this mileage range. Either change start and finish mileage or delete conficting points and try again"
+      status.success = false
+    end
+
+    status
+  end
+
+  def mileage_confict_with_existing_points?(hike_id, start_mileage, finish_mileage)
+    all_points = all_points_from_hike(hike_id).data
+    !all_points.all? do |point|
+      (start_mileage.to_f..finish_mileage.to_f).cover?(point.mileage.to_f)
+    end
+  end
+
   def validate_linear_mileage?(date, mileage, points, hike)
-    # date = to_date(date)
-  
     mileage_before = hike.start_mileage
-    
+
     points.reverse_each do |point|
-      if point.date <= date
-        mileage_before = point.mileage
-      else
-        break
-      end
+      break unless point.date <= date
+
+      mileage_before = point.mileage
     end
-    
+
     mileage_after = hike.finish_mileage
-  
+
     points.each do |point|
-      if point.date > date
-        mileage_after = point.mileage
-      else
-        break
-      end
+      break unless point.date > date
+
+      mileage_after = point.mileage
     end
-  
+
     (mileage_before..mileage_after).cover?(mileage)
   end
 
@@ -245,7 +314,12 @@ class ModelManager
       false
     end
   end
- 
+
+  def hike_owns_point?(hike_id, point_id)
+    points = all_points_from_hike(hike_id)
+    points.data.any? { |point| point.id == point_id.to_i }
+  end
+
   def to_date(string)
     Date.parse(string)
   end
@@ -262,7 +336,6 @@ class ModelManager
     all_hikes = all_hikes_from_user(user.id).data
     all_hikes.any? { |hike| hike.name == hike_name }
   end
-
 
   def construct_user(row)
     User.new(row["name"],

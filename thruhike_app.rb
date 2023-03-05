@@ -31,7 +31,7 @@ helpers do
   def percent_complete(points, hike)
     return 0 if points.empty?
 
-    ( ( points.first.mileage - hike.start_mileage ) / ( hike.finish_mileage - hike.start_mileage ) * 100).round(2)
+    ((points.first.mileage - hike.start_mileage) / (hike.finish_mileage - hike.start_mileage) * 100).round(2)
   end
 end
 
@@ -126,10 +126,10 @@ end
 post "/hikes/delete" do
   require_login unless logged_in?
   hike_id = params[:hike_id].to_i
-  validate_hike_to_edit(hike_id, session[:user_id])
-  status = @manager.delete_hike(hike_id)
+  user = logged_in_user
+  status = @manager.delete_hike(hike_id, user)
 
-  session[:message] = status.success ? "Hike successfully deleted" : "There was an error deleting hike"
+  session[:message] = status.success ? "Hike successfully deleted" : status.message
   redirect "/hikes"
 end
 
@@ -146,7 +146,6 @@ end
 
 post "/hikes/:hike_id" do
   require_login unless logged_in?
-  user = logged_in_user
   hike_id = params["hike_id"]
   date = params[:date]
   mileage = params[:mileage]
@@ -169,21 +168,16 @@ post "/hikes/:hike_id/delete" do
   hike_id = params[:hike_id]
   point_id = params[:point_id]
   user = logged_in_user
-  unless validate_user_owns_hike_and_point?(user.id, point_id, hike_id)
-    session[:message] = "Permission to edit this hike denied"
-    redirect "/hikes"
-  end
 
-  attempt = @manager.delete_point(point_id)
-  session[:message] = attempt.success ? "Point successfully deleted" : "There was an error deleting point"
+  attempt = @manager.delete_point(user, point_id)
+  session[:message] = attempt.success ? "Point successfully deleted" : attempt.message
   redirect "/hikes/#{hike_id}"
 end
 
 get "/hikes/:hike_id/edit" do
   require_login unless logged_in?
-  user = logged_in_user
   hike_id = params["hike_id"].to_i
-  validate_hike_to_edit(hike_id, user.id)
+
   @hike = @manager.one_hike(hike_id).data
   erb :edit_hike
 end
@@ -192,7 +186,7 @@ post "/hikes/:hike_id/edit" do
   require_login unless logged_in?
   user = logged_in_user
   hike_id = params[:hike_id].to_i
-  validate_hike_to_edit(hike_id, user.id)
+
   @hike = @manager.one_hike(hike_id).data
 
   new_hike_name = params["name"]
@@ -200,12 +194,9 @@ post "/hikes/:hike_id/edit" do
   new_finish_mileage = params["finish_mileage"]
   validate_hike_data_types(new_hike_name, new_start_mileage, new_finish_mileage)
 
-  validate_edit_hike_details(user, hike_id, new_hike_name, new_start_mileage, new_finish_mileage)
+  status = @manager.update_hike_details(user, hike_id, new_hike_name, new_start_mileage, new_finish_mileage)
 
-  @manager.update_hike_name(hike_id, new_hike_name)
-  @manager.update_hike_start_mileage(hike_id, new_start_mileage)
-  @manager.update_hike_finish_mileage(hike_id, new_finish_mileage)
-
-  session[:message] = "Hike successfully edited"
+  session[:message] = status.success ? "Hike successfully edited" : status.message
+  redirect "/hikes/#{hike_id}/edit" unless status.success
   redirect "/hikes/#{hike_id}"
 end

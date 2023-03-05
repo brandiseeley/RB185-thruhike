@@ -378,7 +378,7 @@ class AppTest < Minitest::Test
   end
   
   def test_delete_point_other_users_hike
-    post "/hikes/1/delete", { "point_id" => "13" }, log_in_user_2
+    post "/hikes/1/delete", { "point_id" => "1" }, log_in_user_2
     assert_equal(302, last_response.status)
     assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
     assert_equal("Permission to edit this hike denied", session[:message])

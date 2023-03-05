@@ -89,6 +89,8 @@ class DatabasePersistence
     query(sql, new_finish_mileage, hike_id)
   end
 
+  # This is throwing a zero division error When there is a point with mileage
+  # equal to the start mileage, but only when that is the only point
   def average_mileage_per_day(hike)
     sql = <<-SQL
           select round( ( max(mileage) - max(start_mileage) ) / 
