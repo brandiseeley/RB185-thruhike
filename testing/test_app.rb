@@ -92,8 +92,8 @@ class AppTest < Minitest::Test
     get "/"
     assert_equal(200, last_response.status)
     assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
-    assert_includes(last_response.body, "user_one_1")
-    assert_includes(last_response.body, "user_two_2")
+    assert_includes(last_response.body, "Sign In")
+    assert_includes(last_response.body, "Hike Hub")
   end
 
   # Not Logged In tests

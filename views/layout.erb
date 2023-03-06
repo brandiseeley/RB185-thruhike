@@ -20,12 +20,18 @@
       <%== yield %>
     </div>
 
-    <% if logged_in? %>
-      <div class="footer">
+    <div class="directory">
+      <% if logged_in? %>
         <form action="/logout" method="GET">
           <button>Log Out</button>
         </form>
-      </div>
-    <% end %>
+      <% end %>
+      <% unless request.path_info == "/" %>
+        <form action="/" method="GET">
+          <button>Home</button>
+        </form>
+      <% end %>
+    </div>
+
   </body>
 </html>

@@ -65,6 +65,19 @@ helpers do
     session[:message] = "You must be logged in to do that"
     redirect "/"
   end
+
+  def load_user_credentials
+    credentials_path = if ENV["RACK_ENV"] == "test"
+      File.expand_path("../test/users.yml", __FILE__)
+    else
+      File.expand_path("../users.yml", __FILE__)
+    end
+    YAML.load_file(credentials_path)
+  end
+
+  def id_from_username(username)
+    @manager.id_from_username(username)
+  end
 end
 
 # Routes
@@ -73,6 +86,31 @@ get "/" do
   all_users_attempt = @manager.all_users
   @users = all_users_attempt.success ? all_users_attempt.data : []
   erb :home
+end
+
+get "/signin" do
+  erb :sign_in
+end
+
+post "/signin" do
+  credentials = load_user_credentials
+  username = params[:username]
+  password = params[:password]
+
+  if credentials.key?(username) && credentials[username] == params[:password]
+    id_attempt = id_from_username(username)
+    unless id_attempt.success
+      session[:message] = "There was an error logging in"
+      redirect "/hikes"
+    end
+
+    session[:user_id] = id_attempt.data
+    session[:message] = "Welcome!"
+    redirect "/hikes"
+  else
+    session[:message] = "Invalid credentials"
+    erb :sign_in
+  end
 end
 
 get "/logout" do
@@ -91,18 +129,6 @@ get "/hikes" do
   end
   @hikes = hikes_attempt.data
   erb :hikes
-end
-
-post "/hikes" do
-  user_id = params["user_id"]
-  user_attempt = @manager.one_user(user_id)
-  if user_attempt.success
-    session[:user_id] = user_id
-    redirect "/hikes"
-  else
-    session[:message] = "There was an error logging in, try again"
-    redirect "/"
-  end
 end
 
 get "/hikes/new" do
