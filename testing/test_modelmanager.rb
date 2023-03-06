@@ -74,7 +74,7 @@ class ModelManagerTest < MiniTest::Test
 
     status = @manager.insert_new_point(point)
     assert_equal(false, status.success)
-    assert_includes(status.message, "Permission denied, unable to edit hike")
+    assert_includes(status.message, "Unable to fetch hike")
   end
   
   def test_adding_hike_to_nonexistant_user
@@ -82,7 +82,7 @@ class ModelManagerTest < MiniTest::Test
     hike = Hike.new(@unsaved_user, 0, 100, "test hike", false)
     
     status = @manager.insert_new_hike(hike)
-    assert_includes(status.message, 'null value in column "user_id" of relation "hikes" violates not-null constraint')
+    assert_includes(status.message, "Unable to create new hike")
   end
 
   def test_average_mileage_per_day

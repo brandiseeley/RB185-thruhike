@@ -10,98 +10,180 @@ class ModelManager
     @@database = DatabasePersistence.new(alternate_database) if alternate_database
   end
 
-  # Fetching methods
-  def all_users
-    attempt = @@database.all_users
-
-    if attempt.success
-      new_data = attempt.data.map do |user_data|
-        construct_user(user_data)
-      end.sort
-
-      attempt.data = new_data
-    end
-    attempt
-  end
-
+  # Fetching Methods
   def one_user(user_id)
     attempt = @@database.one_user(user_id)
-    return attempt unless attempt.success
+    return Status.failure("Unable to fetch user") unless attempt.success
 
-    attempt.data = construct_user(attempt.data.first)
-    attempt
+    Status.success(construct_user(attempt.data.first))
   end
 
-  def all_hikes_from_user(user_id)
-    attempt = @@database.all_hikes_from_user(user_id)
+  def all_users
+    attempt = @@database.all_users
+    return Status.failure("Unable to fetch users") unless attempt.success
 
-    if attempt.success
-      new_data = attempt.data.map do |hike_data|
-        construct_hike(hike_data)
-      end.sort
+    users = attempt.data.map do |user_data|
+      construct_user(user_data)
+    end.sort
 
-      attempt.data = new_data
-    end
-    attempt
+    Status.success(users)
   end
 
   def one_hike(hike_id)
     attempt = @@database.one_hike(hike_id)
 
-    return attempt unless attempt.success
+    return Status.failure("Unable to fetch hike") unless attempt.success
 
     if attempt.data.ntuples.positive?
       Status.success(construct_hike(attempt.data.first))
     else
-      Status.failure("Permission denied, unable to edit hike")
+      Status.failure("Unable to fetch hike")
     end
   end
 
-  def all_points_from_hike(hike_id)
-    attempt = @@database.all_points_from_hike(hike_id)
-
+  def all_hikes_from_user(user_id)
+    attempt = @@database.all_hikes_from_user(user_id)
     return attempt unless attempt.success
 
-    hike_status = one_hike(hike_id)
-    return hike_status unless hike_status.success
-
-    hike_object = hike_status.data
-    points_data = attempt.data
-
-    attempt.data = points_data.map do |point_data|
-      construct_point(point_data, hike_object)
+    hikes = attempt.data.map do |hike_data|
+      construct_hike(hike_data)
     end.sort
 
-    attempt
+    Status.success(hikes)
   end
 
   def one_point(point_id)
-    attempt = @@database.one_point(point_id)
+    point_attempt = @@database.one_point(point_id)
+    return point_attempt unless point_attempt.success
 
+    return Status.failure("Unable to fetch point") unless point_attempt.data.ntuples.positive?
+    hike_id = point_attempt.data.first["hike_id"].to_i
+
+    hike_attempt = one_hike(hike_id)
+    return hike_attempt unless hike_attempt.success
+
+    Status.success(construct_point(point_attempt.data.first, hike_attempt.data))
+  end
+
+  def all_points_from_hike(hike_id)
+    points_attempt = @@database.all_points_from_hike(hike_id)
+    return points_attempt unless points_attempt.success
+
+    hike_attempt = one_hike(hike_id)
+    return hike_attempt unless hike_attempt.success
+
+    points = points_attempt.data.map do |point_data|
+      construct_point(point_data, hike_attempt.data)
+    end.sort
+
+    Status.success(points)
+  end
+
+  # Inserting Methods
+
+  # Returns id assigned by database
+  def insert_new_user(user)
+    attempt = @@database.insert_new_user(user)
     return attempt unless attempt.success
 
-    if attempt.data.ntuples.positive?
-      hike_id = attempt.data.first["hike_id"].to_i
+    id = attempt.data.values.flatten.first.to_i
+    user.id = id
+    Status.success(id)
+  end
 
-      hike_status = one_hike(hike_id)
-      return hike_status unless hike_status.success
+  # Returns id assigned by database
+  def insert_new_hike(hike)
+    validate_attempt = validate_hike_details(hike)
+    return validate_attempt unless validate_attempt.success
 
-      hike = hike_status.data
+    validity = validate_attempt.data
+    return Status.failure(validity.reason) unless validity.valid
 
-      attempt.data = construct_point(attempt.data.first, hike)
-    else
-      attempt.success = false
-    end
-    attempt
+    insert_attempt = @@database.insert_new_hike(hike)
+    return Status.failure("Unable to create new hike") unless insert_attempt.success
+
+    id = insert_attempt.data.values.flatten.first.to_i
+    hike.id = id
+    Status.success(id)
+  end
+
+  # Returns id assigned by database
+  def insert_new_point(point)
+    validate_attempt = validate_point_details(point)
+    return validate_attempt unless validate_attempt.success
+
+    validity = validate_attempt.data
+    return Status.failure(validity.reason) unless validity.valid
+
+    insert_attempt = @@database.insert_new_point(point)
+    return Status.failure("Unable to create new point") unless insert_attempt.success
+
+    id = insert_attempt.data.values.flatten.first.to_i
+    point.id = id
+    Status.success(id)
+  end
+
+  # Deleting Methods
+
+  def delete_hike(hike_id, user)
+    validate_attempt = validate_hike_to_edit(hike_id, user.id)
+    return validate_attempt unless validate_attempt.success
+
+    validity = validate_attempt.data
+    return Status.failure(validity.reason) unless validity.valid
+
+    delete_attempt = @@database.delete_hike(hike_id)
+
+    delete_attempt.success ? Status.success : Status.failure("There was an error editing this hike")
+  end
+
+  def delete_point(user, point_id)
+    validate_attempt = validate_point_to_delete(user, point_id)
+    return validate_attempt unless validate_attempt.success
+
+    validity = validate_attempt.data
+    return Status.failure(validity.reason) unless validity.valid
+
+    delete_attempt = @@database.delete_point(point_id)
+
+    delete_attempt.success ? Status.success : Status.failure("There was an error editing this hike")
+  end
+
+  # Editing Methods
+
+  def update_hike_details(user, hike_id, new_hike_name, new_start_mileage, new_finish_mileage)
+    validate_attempt = validate_edit_hike_details(user, hike_id, new_hike_name, new_start_mileage, new_finish_mileage)
+    return validate_attempt unless validate_attempt.success
+
+    validity = validate_attempt.data
+    return Status.failure(validity.reason) unless validity.valid
+
+    name_attempt = @@database.update_hike_name(hike_id, new_hike_name)
+    start_attempt = @@database.update_hike_start_mileage(hike_id, new_start_mileage)
+    finish_attempt = @@database.update_hike_finish_mileage(hike_id, new_finish_mileage)
+
+    all_success = name_attempt.success && start_attempt.success && finish_attempt.success
+
+    return Status.failure("There was an error editing this hike") unless all_success
+
+    Status.success
+  end
+
+  def mark_hike_complete(hike)
+    attempt = @@database.mark_hike_complete(hike)
+    attempt.success ? Status.success : Status.failure("There was an error editing this hike")
   end
 
   # Statistic Methods
+  def hike_stats(hike)
+    HikeStats.new(hike, self)
+  end
+
   def average_mileage_per_day(hike)
     attempt = @@database.average_mileage_per_day(hike)
     return attempt unless attempt.success
 
-    attempt.data = attempt.data.values.flatten.first.to_f
-    attempt
+    Status.success(attempt.data.values.flatten.first.to_f)
   end
 
   def mileage_from_finish(hike)
@@ -109,111 +191,18 @@ class ModelManager
     return number_of_points_status unless number_of_points_status.success
 
     if number_of_points_status.data.values.first.first.to_i.zero?
-      @@database.length_of_hike(hike)
+      length_attempt = @@database.length_of_hike(hike)
+      return length_attempt unless length_attempt.success
+      Status.success(length_attempt.data)
     else
-      attempt = @@database.mileage_from_finish(hike)
-      return attempt unless attempt.success
+      from_finish_attempt = @@database.mileage_from_finish(hike)
+      return from_finish_attempt unless from_finish_attempt.success
 
-      Status.success(attempt.data.values.flatten.first.to_f)
+      Status.success(from_finish_attempt.data.values.flatten.first.to_f)
     end
   end
 
-  # Inserting/Altering Methods
-  def mark_hike_complete(hike)
-    @@database.mark_hike_complete(hike)
-  end
-
-  # Returns id assigned by database
-  def insert_new_hike(hike)
-    attempt_status = validate_hike_details(hike)
-    return attempt_status unless attempt_status.success
-
-    validity = attempt_status.data
-    return Status.failure(validity.reason) unless validity.valid
-
-    attempt = @@database.insert_new_hike(hike)
-
-    if attempt.success
-      attempt.data = attempt.data.values.flatten.first.to_i
-      hike.id = attempt.data
-    end
-    attempt
-  end
-
-  # Returns id assigned by database
-  def insert_new_point(point)
-    attempt_status = validate_point_details(point)
-    return attempt_status unless attempt_status.success
-
-    validity = attempt_status.data
-    return Status.failure(validity.reason) unless validity.valid
-
-    attempt = @@database.insert_new_point(point)
-    return attempt unless attempt.success
-
-    attempt.data = attempt.data.values.flatten.first.to_i
-    # TODO : Do I need to return the ID anymore?
-    point.id = attempt.data
-    attempt
-  end
-
-  # Insert new user and update ID with id given by db
-  def insert_new_user(user)
-    attempt = @@database.insert_new_user(user)
-
-    if attempt.success
-      attempt.data = attempt.data.values.flatten.first.to_i
-      user.id = attempt.data
-    end
-    attempt
-  end
-
-  def delete_hike(hike_id, user)
-    attempt_status = validate_hike_to_edit(hike_id, user.id)
-    return attempt_status unless attempt_status.success
-
-    validity = attempt_status.data
-    return Status.failure(validity.reason) unless validity.valid
-
-    delete_status = @@database.delete_hike(hike_id)
-
-    delete_status.success ? Status.success : Status.failure("There was an error editing this hike")
-  end
-
-  def delete_point(user, point_id)
-    attempt_status = validate_point_to_delete(user, point_id)
-    return attempt_status unless attempt_status.success
-
-    validity = attempt_status.data
-    return Status.failure(validity.reason) unless validity.valid
-
-    delete_status = @@database.delete_point(point_id)
-
-    delete_status.success ? Status.success : Status.failure("There was an error editing this hike")
-  end
-
-  def update_hike_details(user, hike_id, new_hike_name, new_start_mileage, new_finish_mileage)
-    attempt_status = validate_edit_hike_details(user, hike_id, new_hike_name, new_start_mileage, new_finish_mileage)
-    return attempt_status unless attempt_status.success
-
-    validity_result = attempt_status.data
-    return Status.failure(validity_result.reason) unless validity_result.valid
-
-    name_status = @@database.update_hike_name(hike_id, new_hike_name)
-    start_status = @@database.update_hike_start_mileage(hike_id, new_start_mileage)
-    finish_status = @@database.update_hike_finish_mileage(hike_id, new_finish_mileage)
-
-    all_success = name_status.success && start_status.success && finish_status.success
-
-    return Status.failure("There was an error editing this hike") unless all_success
-
-    Status.success
-  end
-
-  # Out of place
-  def hike_stats(hike)
-    HikeStats.new(hike, self)
-  end
+  # Constructor Methods
 
   def construct_user(row)
     User.new(row["name"],
@@ -239,9 +228,9 @@ class ModelManager
               row["id"].to_i)
   end
 
-  def to_date(string)
-    Date.parse(string)
-  end
+  private
+
+  # Validation Methods
 
   def validate_hike_to_edit(hike_id, user_id)
     attempt = validate_user_owns_hike(user_id, hike_id)
@@ -335,11 +324,9 @@ class ModelManager
     return all_hikes_attempt unless all_hikes_attempt.success
 
     all_hikes = all_hikes_attempt.data
-    if all_hikes.any? { |hike| hike.name == hike_name }
-      Status.success(ValidationResult.invalid("You already have a hike titled '#{hike_name}'"))
-    else
-      Status.success(ValidationResult.valid)
-    end
+    return Status.success(ValidationResult.valid) if all_hikes.none? { |hike| hike.name == hike_name }
+
+    Status.success(ValidationResult.invalid("You already have a hike titled '#{hike_name}'"))
   end
 
   def validate_user_owns_hike(user_id, hike_id)
@@ -347,11 +334,9 @@ class ModelManager
     return all_hikes_status unless all_hikes_status.success
 
     all_hikes = all_hikes_status.data
-    if all_hikes.any? { |hike| hike.id == hike_id.to_i }
-      Status.success(ValidationResult.valid)
-    else
-      Status.success(ValidationResult.invalid("Permission denied, unable to edit hike"))
-    end
+    return Status.success(ValidationResult.valid) if all_hikes.any? { |hike| hike.id == hike_id.to_i }
+
+    Status.success(ValidationResult.invalid("Permission denied, unable to edit hike"))
   end
 
   def validate_hike_owns_point(hike_id, point_id)
@@ -380,12 +365,17 @@ class ModelManager
     end
   end
 
+  # Helper Methods
+
+  def to_date(string)
+    Date.parse(string)
+  end
+
   def linear_mileage?(date, mileage, points, hike)
     mileage_before = hike.start_mileage
 
     points.reverse_each do |point|
       break unless point.date <= date
-
       mileage_before = point.mileage
     end
 
@@ -393,7 +383,6 @@ class ModelManager
 
     points.each do |point|
       break unless point.date > date
-
       mileage_after = point.mileage
     end
 
@@ -409,7 +398,7 @@ class ModelManager
   end
 end
 
-# Returns statistics for a particular hike packages into an object
+# Returns statistics for a particular hike packaged into an object
 class HikeStats
   attr_reader :average_mileage_per_day, :mileage_from_finish
   def initialize(hike, manager)
