@@ -123,10 +123,6 @@ class DatabasePersistence
     query(sql, hike.id)
   end
 
-  def mileage_from_last_point(point)
-    # TODO
-  end
-
   def all_users
     query("SELECT * FROM users;")
   end
@@ -154,6 +150,11 @@ class DatabasePersistence
   def one_point(point_id)
     sql = "SELECT * FROM points WHERE id = $1"
     query(sql, point_id)
+  end
+
+  def id_from_username(username)
+    sql = "SELECT id FROM users WHERE user_name = $1"
+    query(sql, username)
   end
 
   def mark_hike_complete(hike)
