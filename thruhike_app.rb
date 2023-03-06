@@ -3,6 +3,8 @@ require "sinatra"
 require "sinatra/reloader" if development?
 require "tilt/erubis"
 require "securerandom"
+require "yaml"
+require "bcrypt"
 
 require_relative "model_manager"
 require_relative "models"
@@ -66,6 +68,14 @@ helpers do
     redirect "/"
   end
 
+  def valid_credentials?(username, password)
+    credentials = load_user_credentials
+
+    return false unless credentials.key?(username)
+    bcrypt_password = BCrypt::Password.new(credentials[username])
+    bcrypt_password == password
+  end
+
   def load_user_credentials
     credentials_path = if ENV["RACK_ENV"] == "test"
       File.expand_path("../test/users.yml", __FILE__)
@@ -95,9 +105,8 @@ end
 post "/signin" do
   credentials = load_user_credentials
   username = params[:username]
-  password = params[:password]
 
-  if credentials.key?(username) && credentials[username] == params[:password]
+  if valid_credentials?(username, params[:password])
     id_attempt = id_from_username(username)
     unless id_attempt.success
       session[:message] = "There was an error logging in"
