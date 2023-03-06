@@ -13,8 +13,7 @@ CREATE TABLE hikes (
   user_id integer NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   start_mileage numeric NOT NULL DEFAULT 0.0,
   finish_mileage numeric NOT NULL,
-  name text NOT NULL,
-  completed boolean NOT NULL
+  name text NOT NULL
 );
 
 CREATE TABLE points (

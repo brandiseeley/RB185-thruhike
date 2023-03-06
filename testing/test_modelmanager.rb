@@ -20,7 +20,7 @@ class ModelManagerTest < MiniTest::Test
     @user1 = User.new("User One", "user_one_1")
     @manager.insert_new_user(@user1)
 
-    @incomplete_hike_zero_start = Hike.new(@user1, 0.0, 2194.3, "Incomplete Hike Zero Start", false)
+    @incomplete_hike_zero_start = Hike.new(@user1, 0.0, 2194.3, "Incomplete Hike Zero Start")
     @manager.insert_new_hike(@incomplete_hike_zero_start)
 
     point1 = @incomplete_hike_zero_start.create_new_point(8.1, Date.new(2022, 4, 10))
@@ -32,7 +32,7 @@ class ModelManagerTest < MiniTest::Test
     @user2 = User.new("User Two", "user_two_2")
     @manager.insert_new_user(@user2)
 
-    @complete_hike_non_zero_start = Hike.new(@user2, 50.0, 150.0, "Complete Hike Non-zero Start", false)
+    @complete_hike_non_zero_start = Hike.new(@user2, 50.0, 150.0, "Complete Hike Non-zero Start")
     @manager.insert_new_hike(@complete_hike_non_zero_start)
 
     @manager.insert_new_point(Point.new(@complete_hike_non_zero_start, 58.3, Date.new(2021, 12, 29)))
@@ -46,10 +46,7 @@ class ModelManagerTest < MiniTest::Test
     @manager.insert_new_point(Point.new(@complete_hike_non_zero_start, 135.2, Date.new(2022, 1, 6)))
     @manager.insert_new_point(Point.new(@complete_hike_non_zero_start, 150.0, Date.new(2022, 1, 7)))
 
-    @complete_hike_non_zero_start.mark_complete
-    @manager.mark_hike_complete(@complete_hike_non_zero_start)
-
-    @second_hike_incomplete = Hike.new(@user2, 0.0, 30.0, "Short Hike Incomplete", false)
+    @second_hike_incomplete = Hike.new(@user2, 0.0, 30.0, "Short Hike Incomplete")
     @manager.insert_new_hike(@second_hike_incomplete)
 
     @manager.insert_new_point(Point.new(@second_hike_incomplete, 9.3, Date.new(2023, 1, 13)))
@@ -69,7 +66,7 @@ class ModelManagerTest < MiniTest::Test
   end
 
   def test_adding_point_to_unsaved_hike
-    @unsaved_hike = Hike.new(@user1, 0, 100, "test hike", false)
+    @unsaved_hike = Hike.new(@user1, 0, 100, "test hike")
     point = @unsaved_hike.create_new_point(11.1, Date.today)
 
     status = @manager.insert_new_point(point)
@@ -173,14 +170,6 @@ class ModelManagerTest < MiniTest::Test
     constructed_points = @manager.all_points_from_hike(1).data
 
     assert_equal(manual_points, constructed_points)
-  end
-
-  def test_mark_complete
-    assert_equal(false, @incomplete_hike_zero_start.completed)
-    @manager.mark_hike_complete(@incomplete_hike_zero_start)
-
-    updated_hike = @manager.one_hike(@incomplete_hike_zero_start.id).data
-    assert(updated_hike.completed)
   end
 
   def test_update_hike_name

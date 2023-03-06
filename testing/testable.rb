@@ -15,7 +15,7 @@ class TestData
     @user1 = User.new("User One", "user_one_1")
     manager.insert_new_user(@user1)
 
-    @incomplete_hike_zero_start = Hike.new(@user1, 0.0, 2194.3, "Incomplete Hike Zero Start", false)
+    @incomplete_hike_zero_start = Hike.new(@user1, 0.0, 2194.3, "Incomplete Hike Zero Start")
     manager.insert_new_hike(@incomplete_hike_zero_start)
 
     manager.insert_new_point(Point.new(@incomplete_hike_zero_start, 8.1, Date.new(2022, 4, 10)))
@@ -24,7 +24,7 @@ class TestData
     @user2 = User.new("User Two", "user_two_2")
     manager.insert_new_user(@user2)
 
-    @complete_hike_non_zero_start = Hike.new(@user2, 50.0, 150.0, "Complete Hike Non-zero Start", false)
+    @complete_hike_non_zero_start = Hike.new(@user2, 50.0, 150.0, "Complete Hike Non-zero Start")
     manager.insert_new_hike(@complete_hike_non_zero_start)
 
     manager.insert_new_point(Point.new(@complete_hike_non_zero_start, 58.3, Date.new(2021, 12, 29)))
@@ -37,9 +37,8 @@ class TestData
     manager.insert_new_point(Point.new(@complete_hike_non_zero_start, 135.2, Date.new(2022, 1, 5)))
     manager.insert_new_point(Point.new(@complete_hike_non_zero_start, 135.2, Date.new(2022, 1, 6)))
     manager.insert_new_point(Point.new(@complete_hike_non_zero_start, 150.0, Date.new(2022, 1, 7)))
-    @complete_hike_non_zero_start.mark_complete
 
-    @second_hike_incomplete = Hike.new(@user2, 0.0, 30.0, "Short Hike Incomplete", false)
+    @second_hike_incomplete = Hike.new(@user2, 0.0, 30.0, "Short Hike Incomplete")
     manager.insert_new_hike(@second_hike_incomplete)
 
     manager.insert_new_point(Point.new(@second_hike_incomplete, 4.2, Date.new(2023, 1, 12)))

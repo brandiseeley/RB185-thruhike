@@ -9,15 +9,14 @@ end
 
 # Creates Hike objects that can be saved to database, dependent on having User object
 class Hike
-  attr_reader :user, :start_mileage, :finish_mileage, :name, :completed
+  attr_reader :user, :start_mileage, :finish_mileage, :name
   attr_accessor :id
 
-  def initialize(user_object, start_mileage, finish_mileage, name, completed, id = nil)
+  def initialize(user_object, start_mileage, finish_mileage, name, id = nil)
     @user = user_object
     @start_mileage = start_mileage
     @finish_mileage = finish_mileage
     @name = name
-    @completed = completed
     @id = id
   end
 
@@ -25,16 +24,11 @@ class Hike
     Point.new(self, mileage, date)
   end
 
-  def mark_complete
-    @completed = true
-  end
-
   def ==(other)
     user == other.user &&
       start_mileage == other.start_mileage &&
       finish_mileage == other.finish_mileage &&
       name == other.name &&
-      completed == other.completed &&
       id == other.id
   end
 

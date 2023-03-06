@@ -66,9 +66,6 @@ class AppTest < Minitest::Test
     @manager.insert_new_point(Point.new(@complete_hike_non_zero_start, 135.2, Date.new(2022, 1, 6)))
     @manager.insert_new_point(Point.new(@complete_hike_non_zero_start, 150.0, Date.new(2022, 1, 7)))
 
-    @complete_hike_non_zero_start.mark_complete
-    @manager.mark_hike_complete(@complete_hike_non_zero_start)
-
     @second_hike_incomplete = Hike.new(@user2, 0.0, 30.0, "Short Hike Incomplete", false)
     @manager.insert_new_hike(@second_hike_incomplete)
 

@@ -25,14 +25,13 @@ class DatabasePersistence
     start_mileage = hike.start_mileage
     finish_mileage = hike.finish_mileage
     name = hike.name
-    completed = hike.completed
 
     sql = <<-SQL
             INSERT INTO hikes
-            (user_id, start_mileage, finish_mileage, name, completed)
-            VALUES ($1, $2, $3, $4, $5) RETURNING id;
+            (user_id, start_mileage, finish_mileage, name)
+            VALUES ($1, $2, $3, $4) RETURNING id;
     SQL
-    query(sql, user_id, start_mileage, finish_mileage, name, completed)
+    query(sql, user_id, start_mileage, finish_mileage, name)
   end
 
   def insert_new_point(point)
@@ -155,11 +154,6 @@ class DatabasePersistence
   def id_from_username(username)
     sql = "SELECT id FROM users WHERE user_name = $1"
     query(sql, username)
-  end
-
-  def mark_hike_complete(hike)
-    sql = "UPDATE hikes SET completed = true WHERE id = $1"
-    query(sql, hike.id)
   end
 
   def number_of_points(hike)

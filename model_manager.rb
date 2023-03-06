@@ -175,12 +175,6 @@ class ModelManager
     Status.success
   end
 
-  # TODO : Acount for successful attempt with no edits
-  def mark_hike_complete(hike)
-    attempt = @@database.mark_hike_complete(hike)
-    attempt.success ? Status.success : Status.failure("There was an error editing this hike")
-  end
-
   # Statistic Methods
   # TODO : HikeStats doesn't do any validation
   def hike_stats(hike)
@@ -225,7 +219,6 @@ class ModelManager
              row["start_mileage"].to_f,
              row["finish_mileage"].to_f,
              row["name"],
-             row["completed"] == "t",
              row["id"].to_i)
   end
 
