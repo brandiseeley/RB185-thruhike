@@ -69,8 +69,8 @@ end
 # Routes
 
 get "/" do
-  # TODO : Handle bad status
-  @users = @manager.all_users.data
+  all_users_attempt = @manager.all_users
+  @users = all_users_attempt.success ? all_users_attempt.data : []
   erb :home
 end
 
@@ -82,16 +82,26 @@ end
 get "/hikes" do
   require_login unless logged_in?
   @user = logged_in_user
-  # TODO : Handle bad status
-  @hikes = @manager.all_hikes_from_user(@user.id).data
+
+  hikes_attempt = @manager.all_hikes_from_user(@user.id)
+  unless hikes_attempt.success
+    session[:message] = "There was an error loading your hikes"
+    redirect "/"
+  end
+  @hikes = hikes_attempt.data
   erb :hikes
 end
 
 post "/hikes" do
   user_id = params["user_id"]
-  session[:user_id] = user_id
-  # TODO: validate user exists
-  redirect "/hikes"
+  user_attempt = @manager.one_user(user_id)
+  if user_attempt.success
+    session[:user_id] = user_id
+    redirect "/hikes"
+  else
+    session[:message] = "There was an error logging in, try again"
+    redirect "/"
+  end
 end
 
 get "/hikes/new" do
@@ -137,10 +147,26 @@ get "/hikes/:hike_id" do
   require_login unless logged_in?
   hike_id = params["hike_id"].to_i
   @user = logged_in_user
-  # TODO : Handle bad status
-  @hike = @manager.one_hike(hike_id).data
-  @points = @manager.all_points_from_hike(hike_id).data
+
+  hike_attempt = @manager.one_hike(hike_id)
+  points_attempt = @manager.all_points_from_hike(hike_id)
+
+  unless hike_attempt.success
+    session[:message] = hike_attempt.message
+    redirect "/hikes"
+  end
+
+  unless points_attempt.success
+    session[:message] = points_attempt.message
+    redirect "/hikes"
+  end
+
+  @hike = hike_attempt.data
+  @points = points_attempt.data
+
+  # TODO : Hike Stats isn't functioning properly. Lacks validation
   @stats = @manager.hike_stats(@hike)
+
   erb :hike
 end
 
@@ -178,7 +204,13 @@ get "/hikes/:hike_id/edit" do
   require_login unless logged_in?
   hike_id = params["hike_id"].to_i
 
-  @hike = @manager.one_hike(hike_id).data
+  hike_attempt = @manager.one_hike(hike_id)
+  unless hike_attempt.success
+    session[:message] = hike_attempt.message
+    redirect "/hikes/#{hike_id}"
+  end
+
+  @hike = hike_attempt.data
   erb :edit_hike
 end
 
@@ -187,7 +219,13 @@ post "/hikes/:hike_id/edit" do
   user = logged_in_user
   hike_id = params[:hike_id].to_i
 
-  @hike = @manager.one_hike(hike_id).data
+  hike_attempt = @manager.one_hike(hike_id)
+  unless hike_attempt.success
+    session[:message] = hike_attempt.message
+    redirect "/hikes/#{hike_id}"
+  end
+
+  @hike = hike_attempt.data
 
   new_hike_name = params["name"]
   new_start_mileage = params["start_mileage"]
