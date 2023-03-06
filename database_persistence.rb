@@ -151,9 +151,9 @@ class DatabasePersistence
     query(sql, point_id)
   end
 
-  def id_from_username(username)
+  def id_from_user_name(user_name)
     sql = "SELECT id FROM users WHERE user_name = $1"
-    query(sql, username)
+    query(sql, user_name)
   end
 
   def number_of_points(hike)

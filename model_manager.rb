@@ -79,10 +79,13 @@ class ModelManager
     Status.success(points)
   end
 
-  def id_from_username(username)
-    id_attempt = @@database.id_from_username(username)
+  def id_from_user_name(user_name)
+    id_attempt = @@database.id_from_user_name(user_name)
     return id_attempt unless id_attempt.success
-    return Status.success(id_attempt.data.values.flatten.first.to_i)
+
+    id = id_attempt.data.values.flatten.first.to_i
+    return Status.success(nil) if id.zero?
+    Status.success(id)
   end
 
   # Inserting Methods

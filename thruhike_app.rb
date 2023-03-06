@@ -68,11 +68,11 @@ helpers do
     redirect "/"
   end
 
-  def valid_credentials?(username, password)
+  def valid_credentials?(user_name, password)
     credentials = load_user_credentials
 
-    return false unless credentials.key?(username)
-    bcrypt_password = BCrypt::Password.new(credentials[username])
+    return false unless credentials.key?(user_name)
+    bcrypt_password = BCrypt::Password.new(credentials[user_name])
     bcrypt_password == password
   end
 
@@ -85,8 +85,14 @@ helpers do
     YAML.load_file(credentials_path)
   end
 
-  def id_from_username(username)
-    @manager.id_from_username(username)
+  def id_from_user_name(user_name)
+    id_attempt = @manager.id_from_user_name(user_name)
+    return nil unless id_attempt.success
+    id_attempt.data
+  end
+
+  def user_name_available?(user_name)
+    id_from_user_name(user_name).nil?
   end
 end
 
@@ -98,16 +104,16 @@ get "/" do
   erb :home
 end
 
-get "/signin" do
+get "/sign_in" do
   erb :sign_in
 end
 
-post "/signin" do
+post "/sign_in" do
   credentials = load_user_credentials
-  username = params[:username]
+  user_name = params[:user_name]
 
-  if valid_credentials?(username, params[:password])
-    id_attempt = id_from_username(username)
+  if valid_credentials?(user_name, params[:password])
+    id_attempt = id_from_user_name(user_name)
     unless id_attempt.success
       session[:message] = "There was an error logging in"
       redirect "/hikes"
@@ -122,7 +128,24 @@ post "/signin" do
   end
 end
 
-get "/logout" do
+get "/sign_up" do
+  erb :sign_up
+end
+
+post "/sign_up" do
+  if params[:password] != params[:confirm_password]
+    session[:message] = "Passwords don't match"
+    erb :sign_up
+  elsif !user_name_available?(params[:user_name])
+    session[:message] = "Username already taken"
+    erb :sign_up
+  else
+    # TODO : Restrict format for fields
+    # TODO : Create new user
+  end
+end
+
+get "/log_out" do
   session[:user_id] = nil
   redirect "/"
 end

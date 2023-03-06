@@ -1,0 +1,17 @@
+<h1>Details for new account</h1>
+
+<form action="/sign_up" method="POST">
+  <label for="name">Enter your name: </label>
+  <input type="text" name="name" value="<%= params[:name]  %>" required>
+
+  <label for="user_name">Enter your user name: </label>
+  <input type="text" name="user_name" value="<%= params[:user_name] %>" required>
+
+  <label for="password">Create Password: </label>
+  <input type="password" name="password" required>
+
+  <label for="confirm_password">Confirm Password: </label>
+  <input type="password" name="confirm_password" required>
+
+  <button>Create Account</button>
+</form>
