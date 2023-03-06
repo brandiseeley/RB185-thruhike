@@ -169,12 +169,14 @@ class ModelManager
     Status.success
   end
 
+  # TODO : Acount for successful attempt with no edits
   def mark_hike_complete(hike)
     attempt = @@database.mark_hike_complete(hike)
     attempt.success ? Status.success : Status.failure("There was an error editing this hike")
   end
 
   # Statistic Methods
+  # TODO : HikeStats doesn't do any validation
   def hike_stats(hike)
     HikeStats.new(hike, self)
   end
@@ -230,8 +232,12 @@ class ModelManager
 
   private
 
-  # Validation Methods
+  # TODO : Rename from Validate -> Check, assert, etc?
 
+  # Validation Methods
+  # Returns either a Status failure or a Status success with a ValidationResult object as it's data
+
+  # TODO : Rework this + validate_user_owns_hike. Mostly the same
   def validate_hike_to_edit(hike_id, user_id)
     attempt = validate_user_owns_hike(user_id, hike_id)
     return attempt unless attempt.success
@@ -242,6 +248,16 @@ class ModelManager
     else
       Status.success(ValidationResult.invalid("Permission denied, unable to edit hike"))
     end
+  end
+
+  def validate_user_owns_hike(user_id, hike_id)
+    all_hikes_status = all_hikes_from_user(user_id)
+    return all_hikes_status unless all_hikes_status.success
+
+    all_hikes = all_hikes_status.data
+    return Status.success(ValidationResult.valid) if all_hikes.any? { |hike| hike.id == hike_id.to_i }
+
+    Status.success(ValidationResult.invalid("Permission denied, unable to edit hike"))
   end
 
   def validate_point_to_delete(user, point_id)
@@ -329,15 +345,7 @@ class ModelManager
     Status.success(ValidationResult.invalid("You already have a hike titled '#{hike_name}'"))
   end
 
-  def validate_user_owns_hike(user_id, hike_id)
-    all_hikes_status = all_hikes_from_user(user_id)
-    return all_hikes_status unless all_hikes_status.success
 
-    all_hikes = all_hikes_status.data
-    return Status.success(ValidationResult.valid) if all_hikes.any? { |hike| hike.id == hike_id.to_i }
-
-    Status.success(ValidationResult.invalid("Permission denied, unable to edit hike"))
-  end
 
   def validate_hike_owns_point(hike_id, point_id)
     points_attempt = all_points_from_hike(hike_id)
