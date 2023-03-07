@@ -266,7 +266,7 @@ get "/hikes/:hike_id" do
   erb :hike
 end
 
-post "/hikes/:hike_id/new_point" do
+post "/hikes/:hike_id/points/new" do
   require_login unless logged_in?
 
   user = logged_in_user
@@ -290,7 +290,7 @@ post "/hikes/:hike_id/new_point" do
   redirect "/hikes/#{hike_id}"
 end
 
-post "/hikes/:hike_id/delete_point" do
+post "/hikes/:hike_id/points/delete" do
   require_login unless logged_in?
   hike_id = params[:hike_id]
   user = logged_in_user

@@ -283,7 +283,7 @@ class AppTest < Minitest::Test
 
   # Creating Point Tests
   def test_create_point_user_2
-    post "/hikes/3/new_point", { "date" => "2023-01-14", "mileage" => "13.3", "hike_id" => "3" }, log_in_user_2
+    post "/hikes/3/points/new", { "date" => "2023-01-14", "mileage" => "13.3", "hike_id" => "3" }, log_in_user_2
     assert_equal(302, last_response.status)
     assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
     assert_equal("Point successfully created", session[:message])
@@ -293,7 +293,7 @@ class AppTest < Minitest::Test
   end
   
   def test_create_point_with_existing_date
-    post "/hikes/3/new_point", { "date" => "2023-01-13", "mileage" => "13.3", "hike_id" => "3" }, log_in_user_2
+    post "/hikes/3/points/new", { "date" => "2023-01-13", "mileage" => "13.3", "hike_id" => "3" }, log_in_user_2
     assert_equal(302, last_response.status)
     assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
     assert_equal("Each day may only have one point", session[:message])
@@ -303,7 +303,7 @@ class AppTest < Minitest::Test
   end
   
   def test_create_point_no_mileage
-    post "/hikes/3/new_point", { "date" => "2023-01-14", "hike_id" => "3" }, log_in_user_2
+    post "/hikes/3/points/new", { "date" => "2023-01-14", "hike_id" => "3" }, log_in_user_2
     assert_equal(302, last_response.status)
     assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
     assert_equal("Invalid Mileage", session[:message])
@@ -313,7 +313,7 @@ class AppTest < Minitest::Test
   end
   
   def test_creating_point_no_date
-    post "/hikes/3/new_point", { "mileage" => "13.3", "hike_id" => "3" }, log_in_user_2
+    post "/hikes/3/points/new", { "mileage" => "13.3", "hike_id" => "3" }, log_in_user_2
     assert_equal(302, last_response.status)
     assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
     assert_equal("Invalid Date", session[:message])
@@ -323,7 +323,7 @@ class AppTest < Minitest::Test
   end
   
   def test_create_point_out_of_range
-    post "/hikes/3/new_point", { "date" => "2023-01-14", "mileage" => "999.3", "hike_id" => "3" }, log_in_user_2
+    post "/hikes/3/points/new", { "date" => "2023-01-14", "mileage" => "999.3", "hike_id" => "3" }, log_in_user_2
     assert_equal(302, last_response.status)
     assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
     assert_equal("Mileage must be ascending or equal from one day to a following day", session[:message])
@@ -333,8 +333,8 @@ class AppTest < Minitest::Test
   end
   
   def test_create_point_out_of_date_range
-    post "/hikes/3/new_point", { "date" => "2023-01-15", "mileage" => "22.0", "hike_id" => "3" }, log_in_user_2
-    post "/hikes/3/new_point", { "date" => "2023-01-14", "mileage" => "28.0", "hike_id" => "3" }, log_in_user_2
+    post "/hikes/3/points/new", { "date" => "2023-01-15", "mileage" => "22.0", "hike_id" => "3" }, log_in_user_2
+    post "/hikes/3/points/new", { "date" => "2023-01-14", "mileage" => "28.0", "hike_id" => "3" }, log_in_user_2
     assert_equal(302, last_response.status)
     assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
     assert_equal("Mileage must be ascending or equal from one day to a following day", session[:message])
@@ -345,7 +345,7 @@ class AppTest < Minitest::Test
   end
   
   def test_create_point_out_of_date_range_2
-    post "/hikes/3/new_point", { "date" => "2023-01-11", "mileage" => "4.9", "hike_id" => "3" }, log_in_user_2
+    post "/hikes/3/points/new", { "date" => "2023-01-11", "mileage" => "4.9", "hike_id" => "3" }, log_in_user_2
     assert_equal(302, last_response.status)
     assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
     assert_equal("Mileage must be ascending or equal from one day to a following day", session[:message])
@@ -355,7 +355,7 @@ class AppTest < Minitest::Test
   end
   
   def test_create_point_zero_day
-    post "/hikes/3/new_point", { "date" => "2023-01-14", "mileage" => "9.3", "hike_id" => "3" }, log_in_user_2
+    post "/hikes/3/points/new", { "date" => "2023-01-14", "mileage" => "9.3", "hike_id" => "3" }, log_in_user_2
     assert_equal(302, last_response.status)
     assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
     assert_equal("Point successfully created", session[:message])
@@ -366,7 +366,7 @@ class AppTest < Minitest::Test
 
   # Test deleting points
   def test_delete_point_user_2
-    post "/hikes/3/delete_point", { "point_id" => "13" }, log_in_user_2
+    post "/hikes/3/points/delete", { "point_id" => "13" }, log_in_user_2
     assert_equal(302, last_response.status)
     assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
     assert_equal("Point successfully deleted", session[:message])
@@ -377,7 +377,7 @@ class AppTest < Minitest::Test
   end
   
   def test_delete_point_other_users_hike
-    post "/hikes/1/delete_point", { "point_id" => "1" }, log_in_user_2
+    post "/hikes/1/points/delete", { "point_id" => "1" }, log_in_user_2
     assert_equal(302, last_response.status)
     assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
     assert_equal("Permission denied, unable to fetch hike", session[:message])
@@ -386,7 +386,7 @@ class AppTest < Minitest::Test
   end
   
   def test_delete_non_existent_point
-    post "/hikes/3/delete_point", { "point_id" => "42" }, log_in_user_2
+    post "/hikes/3/points/delete", { "point_id" => "42" }, log_in_user_2
     assert_equal(302, last_response.status)
     assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
     assert_equal("Permission denied, unable to edit hike", session[:message])

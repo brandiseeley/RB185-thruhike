@@ -48,7 +48,7 @@
             <td><%= point.mileage %></td>
             <td><%= miles_since_last_point(@points, point, @hike) %></td>
             <td>            
-              <form action="/hikes/<%= @hike.id %>/delete_point" method="POST">
+              <form action="/hikes/<%= @hike.id %>/points/delete" method="POST">
                 <button name="point_id" value="<%= point.id %>">Delete Point</button>
               </form>
             </td>
@@ -60,7 +60,7 @@
 
   <section class="point-form">
     <h2>New Point</h2>
-    <form action="/hikes/<%= @hike.id %>/new_point" method="POST">
+    <form action="/hikes/<%= @hike.id %>/points/new" method="POST">
     <label for="date">Date: </label>
     <input type="date" name="date" required>
 
