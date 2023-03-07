@@ -39,8 +39,6 @@ end
 
 # Creates Point objects that can be saved to database, dependent on having Hike object
 class Point
-  # @manager = ModelManager.new
-
   attr_reader :hike, :mileage, :date
   attr_accessor :id
 
@@ -68,8 +66,6 @@ end
 
 # Creates User objects that can be saved to database
 class User
-  # @manager = ModelManager.new
-
   attr_reader :name, :user_name
   attr_accessor :id
 
@@ -92,5 +88,22 @@ class User
 
   def <=>(other)
     name <=> other.name
+  end
+end
+
+class Goal
+  attr_reader :date, :mileage, :description, :hike_id
+  attr_accessor :id
+
+  def initialize(date, mileage, description, hike_id, id = nil)
+    @date = date
+    @mileage = mileage
+    @description = description
+    @hike_id = hike_id
+    @id = id
+  end
+
+  def <=>(other)
+    date <=> other.date
   end
 end

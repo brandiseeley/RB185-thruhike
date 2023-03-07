@@ -79,6 +79,17 @@ class ModelManager
     Status.success(points)
   end
 
+  def all_goals_from_hike(hike_id)
+    goals_attempt = @@database.all_goals_from_hike(hike_id)
+    return goals_attempt unless goals_attempt.success
+
+    goals = goals_attempt.data.map do |goal_data|
+      construct_goal(goal_data)
+    end.sort
+
+    Status.success(goals)
+  end
+
   def id_from_user_name(user_name)
     id_attempt = @@database.id_from_user_name(user_name)
     return id_attempt unless id_attempt.success
@@ -132,6 +143,28 @@ class ModelManager
     Status.success(id)
   end
 
+  def insert_new_goal(goal, user)
+    ownership_check = validate_hike_to_edit(goal.hike_id, user.id)
+    return ownership_check unless ownership_check.success
+
+    hike_attempt = one_hike(goal.hike_id)
+    return hike_attempt unless hike_attempt.success
+    hike = hike_attempt.data
+
+    validate_attempt = validate_goal_details(goal, hike)
+    return validate_attempt unless validate_attempt.success
+
+    validity = validate_attempt.data
+    return Status.failure(validity.reason) unless validity.valid
+
+    insert_attempt = @@database.insert_new_goal(goal)
+    return Status.failure("Unable to create new goal") unless insert_attempt.success
+
+    id = insert_attempt.data.values.flatten.first.to_i
+    goal.id = id
+    Status.success(id)
+  end
+
   # Deleting Methods
 
   def delete_hike(hike_id, user)
@@ -156,6 +189,29 @@ class ModelManager
     delete_attempt = @@database.delete_point(point_id)
 
     delete_attempt.success ? Status.success : Status.failure("There was an error editing this hike")
+  end
+
+  def delete_goal(user, hike_id, goal_id)
+    # TODO : Validate details (user owns goal, goal belongs to current hike)
+    hike_attempt = one_hike(hike_id)
+    return hike_attempt unless hike_attempt.success
+    hike = hike_attempt.data
+
+    ownership_check = validate_hike_to_edit(hike_id, user.id)
+    return ownership_check unless ownership_check.success
+
+    ownership_validity = ownership_check.data
+    return Status.failure(ownership_validity.reason) unless ownership_validity.valid
+
+    goal_belongs_to_hike_check = validate_goal_belongs_to_hike(hike, goal_id)
+    return goal_belongs_to_hike_check unless goal_belongs_to_hike_check.success
+
+    goal_validity = goal_belongs_to_hike_check.data
+    return Status.failure(ownership_validity.reason) unless ownership_validity.valid
+
+    delete_attempt = @@database.delete_goal(goal_id)
+
+    delete_attempt.success ? Status.success : Status.failure("There was an error editng this hike")
   end
 
   # Editing Methods
@@ -228,8 +284,16 @@ class ModelManager
   def construct_point(row, hike)
     Point.new(hike,
               row["mileage"].to_f,
-              DateTime.parse(row["date"]).to_date,
+              Date.parse(row["date"]).to_date,
               row["id"].to_i)
+  end
+
+  def construct_goal(row)
+    Goal.new(Date.parse(row["date"]).to_date,
+             row["mileage"].to_f,
+             row["description"],
+             row["hike_id"].to_i,
+             row["id"].to_i)
   end
 
   private
@@ -335,6 +399,35 @@ class ModelManager
     end
 
     validate_duplicate_name(hike.name, hike.user)
+  end
+
+  def validate_goal_details(goal, hike)
+    unless non_negative?(goal.mileage)
+      return Status.success(ValidationResult.invalid("Mileage must be non-negative"))
+    end
+
+    all_points_attempt = all_points_from_hike(hike.id)
+    return all_points_attempt unless all_points_attempt.success
+
+    all_points = all_points_attempt.data
+
+    if !all_points.empty? && all_points.last.date > goal.date
+      return Status.success(ValidationResult.invalid("Date must be past first existing point date"))
+    end
+
+    Status.success(ValidationResult.valid)
+  end
+
+  def validate_goal_belongs_to_hike(hike, goal_id)
+    all_goals_from_hike_attempt = all_goals_from_hike(hike.id)
+    return all_goals_from_hike_attempt unless all_goals_from_hike_attempt.success
+
+    all_goals = all_goals_from_hike_attempt.data
+    if all_goals.none? { |goal| goal.id == goal_id }
+      return Status.success(ValidationResult.invalid("Goal doesn't belong to current hike"))
+    end
+
+    Status.success(ValidationResult.valid)
   end
 
   def validate_duplicate_name(hike_name, user)

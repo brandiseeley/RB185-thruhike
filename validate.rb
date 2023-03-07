@@ -33,6 +33,21 @@ module Validate
     redirect "/hikes/#{hike_id}" if error
   end
 
+  def validate_goal_data_types(hike_id, date, description, mileage)
+    error = false
+    if !is_numeric?(mileage)
+      session[:message] = "Invalid Mileage"
+      error = true
+    elsif date !~ /[0-9]{4}-[0-9]{2}-[0-9]{2}/
+      session[:message] = "Invalid Date"
+      error = true
+    elsif description.strip.empty?
+      sesssion[:message] = "Invalid Description, must contain characters"
+      error = true
+    end
+    redirect "/hikes/#{hike_id}" if error
+  end
+
   private
 
   def is_numeric?(string)

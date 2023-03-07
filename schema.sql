@@ -1,6 +1,7 @@
-DROP TABLE points;
-DROP TABLE hikes;
-DROP TABLE users;
+DROP TABLE IF EXISTS goals;
+DROP TABLE IF EXISTS points;
+DROP TABLE IF EXISTS hikes;
+DROP TABLE IF EXISTS users;
 
 CREATE TABLE users (
   id serial PRIMARY KEY,
@@ -21,4 +22,12 @@ CREATE TABLE points (
   hike_id integer NOT NULL REFERENCES hikes(id) ON DELETE CASCADE,
   mileage numeric NOT NULL CHECK(mileage >= 0.0),
   date date NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE goals (
+  id serial PRIMARY KEY,
+  hike_id integer NOT NULL REFERENCES hikes(id) ON DELETE CASCADE,
+  mileage numeric NOT NULL CHECK(mileage > 0),
+  description varchar(150) NOT NULL,
+  date date NOT NULL
 );

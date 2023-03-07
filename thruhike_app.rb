@@ -36,6 +36,12 @@ helpers do
 
     ((points.first.mileage - hike.start_mileage) / (hike.finish_mileage - hike.start_mileage) * 100).round(2)
   end
+
+  def required_pace(goal, hike, last_point)
+    distance_to_go = goal.mileage - last_point.mileage
+    days_to_go = goal.date - last_point.date
+    (distance_to_go / days_to_go).round(2)
+  end
 end
 
 # Route Helpers
@@ -113,13 +119,13 @@ post "/sign_in" do
   user_name = params[:user_name]
 
   if valid_credentials?(user_name, params[:password])
-    id_attempt = id_from_user_name(user_name)
-    unless id_attempt.success
+    id = id_from_user_name(user_name)
+    if id.nil?
       session[:message] = "There was an error logging in"
       redirect "/hikes"
     end
 
-    session[:user_id] = id_attempt.data
+    session[:user_id] = id
     session[:message] = "Welcome!"
     redirect "/hikes"
   else
@@ -204,33 +210,47 @@ end
 
 get "/hikes/:hike_id" do
   require_login unless logged_in?
+
+  # TODO : Validate user owns hike
+
   hike_id = params["hike_id"].to_i
   @user = logged_in_user
 
   hike_attempt = @manager.one_hike(hike_id)
-  points_attempt = @manager.all_points_from_hike(hike_id)
-
   unless hike_attempt.success
     session[:message] = hike_attempt.message
     redirect "/hikes"
   end
-
+  
+  points_attempt = @manager.all_points_from_hike(hike_id)
   unless points_attempt.success
     session[:message] = points_attempt.message
     redirect "/hikes"
   end
 
+  goals_attempt = @manager.all_goals_from_hike(hike_id)
+  unless goals_attempt.success
+    session[:message] = goals_attempt.message
+    redirect "/hikes"
+  end
+
   @hike = hike_attempt.data
   @points = points_attempt.data
+  @goals = goals_attempt.data
 
   # TODO : Hike Stats isn't functioning properly. Lacks validation
   @stats = @manager.hike_stats(@hike)
 
+  
+
   erb :hike
 end
 
-post "/hikes/:hike_id" do
+post "/hikes/:hike_id/new_point" do
   require_login unless logged_in?
+
+  # TODO : Validate user owns hike
+
   hike_id = params["hike_id"]
   date = params[:date]
   mileage = params[:mileage]
@@ -248,8 +268,11 @@ post "/hikes/:hike_id" do
   redirect "/hikes/#{hike_id}"
 end
 
-post "/hikes/:hike_id/delete" do
+post "/hikes/:hike_id/delete_point" do
   require_login unless logged_in?
+
+  # TODO : Validate user owns hike
+
   hike_id = params[:hike_id]
   point_id = params[:point_id]
   user = logged_in_user
@@ -259,8 +282,50 @@ post "/hikes/:hike_id/delete" do
   redirect "/hikes/#{hike_id}"
 end
 
+post "/hikes/:hike_id/new_goal" do
+  require_login unless logged_in?
+
+  # TODO : Validate user owns hike
+
+  user = logged_in_user
+  hike_id = params[:hike_id].to_i
+  date = params[:date]
+  description = params[:description]
+  mileage = params[:mileage]
+
+  validate_goal_data_types(hike_id, date, description, mileage)
+
+  date = Date.parse(date)
+  description = description.strip
+  mileage = mileage.to_f
+
+  goal = Goal.new(date, mileage, description, hike_id)
+  attempt = @manager.insert_new_goal(goal, user)
+
+  session[:message] = attempt.success ? "Goal successfully created" : status.message
+  redirect "/hikes/#{hike_id}"
+end
+
+post "/hikes/:hike_id/delete_goal" do
+  require_login unless logged_in?
+  user = logged_in_user
+  
+  # TODO : Validate user owns hike
+
+  hike_id = params[:hike_id].to_i
+  goal_id = params[:goal_id].to_i
+
+  # binding.pry
+  attempt = @manager.delete_goal(user, hike_id, goal_id)
+  session[:message] = attempt.success ? "Goal successfully deleted" : attempt.message
+  redirect "/hikes/#{hike_id}"
+end
+
 get "/hikes/:hike_id/edit" do
   require_login unless logged_in?
+
+  # TODO : Validate user owns hike
+
   hike_id = params["hike_id"].to_i
 
   hike_attempt = @manager.one_hike(hike_id)
@@ -275,6 +340,9 @@ end
 
 post "/hikes/:hike_id/edit" do
   require_login unless logged_in?
+
+  # TODO : Validate user owns hike
+
   user = logged_in_user
   hike_id = params[:hike_id].to_i
 

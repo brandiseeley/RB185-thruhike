@@ -63,6 +63,18 @@ class DatabasePersistence
     query(sql, name, user_name)
   end
 
+  def insert_new_goal(goal)
+    sql = <<-SQL
+            INSERT INTO goals
+            (hike_id, mileage, description, date)
+            VALUES
+            ($1, $2, $3, $4)
+            RETURNING id;
+    SQL
+
+    query(sql, goal.hike_id, goal.mileage, goal.description, goal.date)
+  end
+
   def delete_hike(hike_id)
     sql = "DELETE FROM hikes WHERE id = $1"
     query(sql, hike_id)
@@ -71,6 +83,11 @@ class DatabasePersistence
   def delete_point(point_id)
     sql = "DELETE FROM points WHERE id = $1"
     query(sql, point_id)
+  end
+
+  def delete_goal(goal_id)
+    sql = "DELETE FROM goals WHERE id = $1"
+    query(sql, goal_id)
   end
 
   def update_hike_name(hike_id, new_name)
@@ -149,6 +166,11 @@ class DatabasePersistence
   def one_point(point_id)
     sql = "SELECT * FROM points WHERE id = $1"
     query(sql, point_id)
+  end
+
+  def all_goals_from_hike(hike_id)
+    sql = "SELECT * FROM goals WHERE hike_id = $1"
+    query(sql, hike_id)
   end
 
   def id_from_user_name(user_name)

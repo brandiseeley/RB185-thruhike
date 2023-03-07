@@ -43,6 +43,8 @@ class TestData
 
     manager.insert_new_point(Point.new(@second_hike_incomplete, 4.2, Date.new(2023, 1, 12)))
     manager.insert_new_point(Point.new(@second_hike_incomplete, 9.3, Date.new(2023, 1, 13)))
+
+    manager.insert_new_goal(Goal.new(Date.new(2023, 1, 17), 30.0, "Finish Hike", @second_hike_incomplete.id), @user2)
   end
 end
 

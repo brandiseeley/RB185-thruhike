@@ -48,7 +48,7 @@
             <td><%= point.mileage %></td>
             <td><%= miles_since_last_point(@points, point, @hike) %></td>
             <td>            
-              <form action="/hikes/<%= @hike.id %>/delete" method="POST">
+              <form action="/hikes/<%= @hike.id %>/delete_point" method="POST">
                 <button name="point_id" value="<%= point.id %>">Delete Point</button>
               </form>
             </td>
@@ -56,23 +56,87 @@
         <% end %>
       </tbody>
     </table>
-
   </section>
-  <h2>New Point</h2>
+
   <section class="point-form">
-    <form action="/hikes/<%= @hike.id %>" method="POST">
+    <h2>New Point</h2>
+    <form action="/hikes/<%= @hike.id %>/new_point" method="POST">
     <label for="date">Date: </label>
     <input type="date" name="date" required>
 
     <label for="mileage">Mile: </label>
     <input type="number" 
-           name="mileage"
-           step="0.01"
-           min="<%= @hike.start_mileage %>"
-           max="<%= @hike.finish_mileage %>"
-           required>
+          name="mileage"
+          step="0.01"
+          min="<%= @hike.start_mileage %>"
+          max="<%= @hike.finish_mileage %>"
+          required>
 
     <button>Create New Point</button>
+    </form>
+  </section>
+
+  <section class="goals">
+    <table border="1">
+      <caption>Goals</caption>
+      <thead>
+        <tr>
+          <th>Description</th>
+          <th>Desired Arrival</th>
+          <th>Mile Mark</th>
+          <th>Miles To Go</th>
+          <th>Required Pace</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @goals.each do |goal| %>
+          <tr>
+            <td><%= goal.description %></td>
+            <td><%= goal.date %></td>
+            <td><%= goal.mileage %></td>
+            <td>
+              <% if @points.empty? %>
+                <%= goal.mileage - @hike.start_mileage %>
+              <% else %>
+                <%= (goal.mileage - @points.first.mileage).round(2) %>
+              <% end %>
+            </td>
+            <td>
+              <% if @points.empty? %>
+                TBD
+              <% else %>
+                <%= required_pace(goal, @hike, @points.first) %></td>
+              <% end %>
+            <td>            
+              <form action="/hikes/<%= @hike.id %>/delete_goal" method="POST">
+                <button name="goal_id" value="<%= goal.id %>">Delete Goal</button>
+              </form>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="goal-form">
+    <h2>New Goal</h2>
+    <form action="/hikes/<%= @hike.id %>/new_goal" method="POST">
+      <label for="date">Desired Arrival: </label>
+      <input type="date" name="date" required>
+
+      <label for="description">Description: </label>
+      <input type="text" name="description" required>
+
+      <label for="mileage">Mile Mark: </label>
+      <input type="number" 
+            name="mileage"
+            step="0.01"
+            min="<%= @hike.start_mileage %>"
+            max="<%= @hike.finish_mileage %>"
+            required>
+
+      <button>Create New Goal</button>
     </form>
   </section>
 
