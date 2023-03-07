@@ -10,6 +10,16 @@ class ModelManager
     @@database = DatabasePersistence.new(alternate_database) if alternate_database
   end
 
+  # Ownership Checks
+  def check_owns_hike(user, hike_id)
+    all_hikes_attempt = all_hikes_from_user(user.id)
+    return all_hikes_attempt unless all_hikes_attempt.success
+    
+    all_hikes = all_hikes_attempt.data
+    return Status.success if all_hikes.any? { |hike| hike.id == hike_id.to_i }
+    Status.failure("Permission denied, unable to fetch hike")
+  end
+
   # Fetching Methods
   def one_user(user_id)
     attempt = @@database.one_user(user_id)
@@ -144,9 +154,6 @@ class ModelManager
   end
 
   def insert_new_goal(goal, user)
-    ownership_check = validate_hike_to_edit(goal.hike_id, user.id)
-    return ownership_check unless ownership_check.success
-
     hike_attempt = one_hike(goal.hike_id)
     return hike_attempt unless hike_attempt.success
     hike = hike_attempt.data
@@ -168,12 +175,6 @@ class ModelManager
   # Deleting Methods
 
   def delete_hike(hike_id, user)
-    validate_attempt = validate_hike_to_edit(hike_id, user.id)
-    return validate_attempt unless validate_attempt.success
-
-    validity = validate_attempt.data
-    return Status.failure(validity.reason) unless validity.valid
-
     delete_attempt = @@database.delete_hike(hike_id)
 
     delete_attempt.success ? Status.success : Status.failure("There was an error editing this hike")
@@ -196,12 +197,6 @@ class ModelManager
     hike_attempt = one_hike(hike_id)
     return hike_attempt unless hike_attempt.success
     hike = hike_attempt.data
-
-    ownership_check = validate_hike_to_edit(hike_id, user.id)
-    return ownership_check unless ownership_check.success
-
-    ownership_validity = ownership_check.data
-    return Status.failure(ownership_validity.reason) unless ownership_validity.valid
 
     goal_belongs_to_hike_check = validate_goal_belongs_to_hike(hike, goal_id)
     return goal_belongs_to_hike_check unless goal_belongs_to_hike_check.success
@@ -303,29 +298,6 @@ class ModelManager
   # Validation Methods
   # Returns either a Status failure or a Status success with a ValidationResult object as it's data
 
-  # TODO : Rework this + validate_user_owns_hike. Mostly the same
-  def validate_hike_to_edit(hike_id, user_id)
-    attempt = validate_user_owns_hike(user_id, hike_id)
-    return attempt unless attempt.success
-
-    validity = attempt.data
-    if validity.valid
-      Status.success(ValidationResult.valid)
-    else
-      Status.success(ValidationResult.invalid("Permission denied, unable to edit hike"))
-    end
-  end
-
-  def validate_user_owns_hike(user_id, hike_id)
-    all_hikes_status = all_hikes_from_user(user_id)
-    return all_hikes_status unless all_hikes_status.success
-
-    all_hikes = all_hikes_status.data
-    return Status.success(ValidationResult.valid) if all_hikes.any? { |hike| hike.id == hike_id.to_i }
-
-    Status.success(ValidationResult.invalid("Permission denied, unable to edit hike"))
-  end
-
   def validate_point_to_delete(user, point_id)
     point_attempt = one_point(point_id)
     unless point_attempt.success
@@ -333,19 +305,11 @@ class ModelManager
       return point_attempt
     end
 
+    # TODO : Check hike owns points earlier 
     point = point_attempt.data
-
-    user_owns_hike_attempt = validate_user_owns_hike(user.id, point.hike.id)
-    return user_owns_hike_attempt unless user_owns_hike_attempt.success
-
-    validity = user_owns_hike_attempt.data
-    return Status.success(ValidationResult.invalid(validity.reason)) unless validity.valid
 
     hike_owns_point_attempt = validate_hike_owns_point(point.hike.id, point_id)
     return hike_owns_point_attempt unless hike_owns_point_attempt.success
-
-    validity = user_owns_hike_attempt.data
-    return Status.success(ValidationResult.invalid(validity.reason)) unless validity.valid
 
     Status.success(ValidationResult.valid)
   end
@@ -386,7 +350,7 @@ class ModelManager
       return Status.success(ValidationResult.invalid("Mileage must be ascending or equal from one day to a following day"))
     end
 
-    validate_user_owns_hike(hike.user.id, point.hike.id)
+    Status.success(ValidationResult.valid)
   end
 
   def validate_hike_details(hike)

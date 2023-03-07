@@ -100,6 +100,20 @@ helpers do
   def user_name_available?(user_name)
     id_from_user_name(user_name).nil?
   end
+
+  def check_hike_exists(hike_id)
+    hike_attempt = @manager.one_hike(hike_id)
+    return if hike_attempt.success
+    session[:message] = hike_attempt.message
+    redirect "/hikes"
+  end
+
+  def check_ownership(user, hike_id)
+    ownership_attempt = @manager.check_owns_hike(user, hike_id)
+    return if ownership_attempt.success
+    session[:message] = ownership_attempt.message
+    redirect "/hikes"
+  end
 end
 
 # Routes
@@ -202,6 +216,9 @@ post "/hikes/delete" do
   require_login unless logged_in?
   hike_id = params[:hike_id].to_i
   user = logged_in_user
+  check_hike_exists(hike_id)
+  check_ownership(user, hike_id)
+
   status = @manager.delete_hike(hike_id, user)
 
   session[:message] = status.success ? "Hike successfully deleted" : status.message
@@ -210,11 +227,14 @@ end
 
 get "/hikes/:hike_id" do
   require_login unless logged_in?
+  @user = logged_in_user
+  hike_id = params["hike_id"].to_i
+
+  check_hike_exists(hike_id)
+  check_ownership(@user, hike_id)
 
   # TODO : Validate user owns hike
 
-  hike_id = params["hike_id"].to_i
-  @user = logged_in_user
 
   hike_attempt = @manager.one_hike(hike_id)
   unless hike_attempt.success
@@ -249,9 +269,11 @@ end
 post "/hikes/:hike_id/new_point" do
   require_login unless logged_in?
 
-  # TODO : Validate user owns hike
-
+  user = logged_in_user
   hike_id = params["hike_id"]
+  check_hike_exists(hike_id)
+  check_ownership(user, hike_id)
+
   date = params[:date]
   mileage = params[:mileage]
   hike_attempt = @manager.one_hike(hike_id)
@@ -270,12 +292,12 @@ end
 
 post "/hikes/:hike_id/delete_point" do
   require_login unless logged_in?
-
-  # TODO : Validate user owns hike
-
   hike_id = params[:hike_id]
-  point_id = params[:point_id]
   user = logged_in_user
+  check_hike_exists(hike_id)
+  check_ownership(user, hike_id)
+
+  point_id = params[:point_id]
 
   attempt = @manager.delete_point(user, point_id)
   session[:message] = attempt.success ? "Point successfully deleted" : attempt.message
@@ -284,11 +306,11 @@ end
 
 post "/hikes/:hike_id/new_goal" do
   require_login unless logged_in?
-
-  # TODO : Validate user owns hike
-
   user = logged_in_user
   hike_id = params[:hike_id].to_i
+  check_hike_exists(hike_id)
+  check_ownership(user, hike_id)
+
   date = params[:date]
   description = params[:description]
   mileage = params[:mileage]
@@ -309,10 +331,12 @@ end
 post "/hikes/:hike_id/delete_goal" do
   require_login unless logged_in?
   user = logged_in_user
-  
+  hike_id = params[:hike_id]
+  check_hike_exists(hike_id)
+  check_ownership(user, hike_id)
+
   # TODO : Validate user owns hike
 
-  hike_id = params[:hike_id].to_i
   goal_id = params[:goal_id].to_i
 
   # binding.pry
@@ -323,11 +347,14 @@ end
 
 get "/hikes/:hike_id/edit" do
   require_login unless logged_in?
-
+  user = logged_in_user
+  hike_id = params["hike_id"]
+  check_hike_exists(hike_id)
+  check_ownership(user, hike_id)
   # TODO : Validate user owns hike
 
-  hike_id = params["hike_id"].to_i
 
+  # TODO : Should we get hike when we check if it exists?
   hike_attempt = @manager.one_hike(hike_id)
   unless hike_attempt.success
     session[:message] = hike_attempt.message
@@ -340,11 +367,11 @@ end
 
 post "/hikes/:hike_id/edit" do
   require_login unless logged_in?
-
-  # TODO : Validate user owns hike
-
   user = logged_in_user
   hike_id = params[:hike_id].to_i
+  check_hike_exists(hike_id)
+  check_ownership(user, hike_id)
+
 
   hike_attempt = @manager.one_hike(hike_id)
   unless hike_attempt.success
