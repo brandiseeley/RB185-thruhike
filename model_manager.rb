@@ -10,16 +10,6 @@ class ModelManager
     @@database = DatabasePersistence.new(alternate_database) if alternate_database
   end
 
-  # Ownership Checks
-  def check_owns_hike(user, hike_id)
-    all_hikes_attempt = all_hikes_from_user(user.id)
-    return all_hikes_attempt unless all_hikes_attempt.success
-    
-    all_hikes = all_hikes_attempt.data
-    return Status.success if all_hikes.any? { |hike| hike.id == hike_id.to_i }
-    Status.failure("Permission denied, unable to fetch hike")
-  end
-
   # Fetching Methods
   def one_user(user_id)
     attempt = @@database.one_user(user_id)
@@ -202,7 +192,7 @@ class ModelManager
     return goal_belongs_to_hike_check unless goal_belongs_to_hike_check.success
 
     goal_validity = goal_belongs_to_hike_check.data
-    return Status.failure(ownership_validity.reason) unless ownership_validity.valid
+    return Status.failure(goal_validity.reason) unless goal_validity.valid
 
     delete_attempt = @@database.delete_goal(goal_id)
 

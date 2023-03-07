@@ -101,17 +101,16 @@ helpers do
     id_from_user_name(user_name).nil?
   end
 
-  def check_hike_exists(hike_id)
+  def fetch_hike_if_exists(hike_id)
     hike_attempt = @manager.one_hike(hike_id)
-    return if hike_attempt.success
+    return hike_attempt.data if hike_attempt.success
     session[:message] = hike_attempt.message
     redirect "/hikes"
   end
 
-  def check_ownership(user, hike_id)
-    ownership_attempt = @manager.check_owns_hike(user, hike_id)
-    return if ownership_attempt.success
-    session[:message] = ownership_attempt.message
+  def check_hike_ownership(user, hike)
+    return if hike.user == user
+    session[:message] = "Permission denied, unable to fetch hike"
     redirect "/hikes"
   end
 end
@@ -216,8 +215,8 @@ post "/hikes/delete" do
   require_login unless logged_in?
   hike_id = params[:hike_id].to_i
   user = logged_in_user
-  check_hike_exists(hike_id)
-  check_ownership(user, hike_id)
+  hike = fetch_hike_if_exists(hike_id)
+  check_hike_ownership(user, hike)
 
   status = @manager.delete_hike(hike_id, user)
 
@@ -230,17 +229,10 @@ get "/hikes/:hike_id" do
   @user = logged_in_user
   hike_id = params["hike_id"].to_i
 
-  check_hike_exists(hike_id)
-  check_ownership(@user, hike_id)
+  @hike = fetch_hike_if_exists(hike_id)
+  check_hike_ownership(@user, @hike)
 
   # TODO : Validate user owns hike
-
-
-  hike_attempt = @manager.one_hike(hike_id)
-  unless hike_attempt.success
-    session[:message] = hike_attempt.message
-    redirect "/hikes"
-  end
   
   points_attempt = @manager.all_points_from_hike(hike_id)
   unless points_attempt.success
@@ -254,14 +246,11 @@ get "/hikes/:hike_id" do
     redirect "/hikes"
   end
 
-  @hike = hike_attempt.data
   @points = points_attempt.data
   @goals = goals_attempt.data
 
   # TODO : Hike Stats isn't functioning properly. Lacks validation
   @stats = @manager.hike_stats(@hike)
-
-  
 
   erb :hike
 end
@@ -271,15 +260,15 @@ post "/hikes/:hike_id/points/new" do
 
   user = logged_in_user
   hike_id = params["hike_id"]
-  check_hike_exists(hike_id)
-  check_ownership(user, hike_id)
+  point_id = params["point_id"]
+  hike = fetch_hike_if_exists(hike_id)
+  check_hike_ownership(user, hike)
+  
 
   date = params[:date]
   mileage = params[:mileage]
-  hike_attempt = @manager.one_hike(hike_id)
 
-  validate_point_data_types(hike_attempt, mileage, date, hike_id)
-  hike = hike_attempt.data
+  validate_point_data_types(mileage, date, hike_id)
   mileage = mileage.to_f
   date = Date.parse(date)
 
@@ -294,8 +283,8 @@ post "/hikes/:hike_id/points/delete" do
   require_login unless logged_in?
   hike_id = params[:hike_id]
   user = logged_in_user
-  check_hike_exists(hike_id)
-  check_ownership(user, hike_id)
+  hike = fetch_hike_if_exists(hike_id)
+  check_hike_ownership(user, hike)
 
   point_id = params[:point_id]
 
@@ -308,8 +297,8 @@ post "/hikes/:hike_id/new_goal" do
   require_login unless logged_in?
   user = logged_in_user
   hike_id = params[:hike_id].to_i
-  check_hike_exists(hike_id)
-  check_ownership(user, hike_id)
+  hike = fetch_hike_if_exists(hike_id)
+  check_hike_ownership(user, hike)
 
   date = params[:date]
   description = params[:description]
@@ -332,8 +321,8 @@ post "/hikes/:hike_id/delete_goal" do
   require_login unless logged_in?
   user = logged_in_user
   hike_id = params[:hike_id]
-  check_hike_exists(hike_id)
-  check_ownership(user, hike_id)
+  hike = fetch_hike_if_exists(hike_id)
+  check_hike_ownership(user, hike)
 
   # TODO : Validate user owns hike
 
@@ -349,19 +338,10 @@ get "/hikes/:hike_id/edit" do
   require_login unless logged_in?
   user = logged_in_user
   hike_id = params["hike_id"]
-  check_hike_exists(hike_id)
-  check_ownership(user, hike_id)
+  @hike = fetch_hike_if_exists(hike_id)
+  check_hike_ownership(user, @hike)
   # TODO : Validate user owns hike
 
-
-  # TODO : Should we get hike when we check if it exists?
-  hike_attempt = @manager.one_hike(hike_id)
-  unless hike_attempt.success
-    session[:message] = hike_attempt.message
-    redirect "/hikes/#{hike_id}"
-  end
-
-  @hike = hike_attempt.data
   erb :edit_hike
 end
 
@@ -369,17 +349,9 @@ post "/hikes/:hike_id/edit" do
   require_login unless logged_in?
   user = logged_in_user
   hike_id = params[:hike_id].to_i
-  check_hike_exists(hike_id)
-  check_ownership(user, hike_id)
+  @hike = fetch_hike_if_exists(hike_id)
+  check_hike_ownership(user, @hike)
 
-
-  hike_attempt = @manager.one_hike(hike_id)
-  unless hike_attempt.success
-    session[:message] = hike_attempt.message
-    redirect "/hikes/#{hike_id}"
-  end
-
-  @hike = hike_attempt.data
 
   new_hike_name = params["name"]
   new_start_mileage = params["start_mileage"]

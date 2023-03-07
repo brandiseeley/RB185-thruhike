@@ -18,12 +18,9 @@ module Validate
     redirect back if error
   end
 
-  def validate_point_data_types(hike_attempt, mileage, date, hike_id)
+  def validate_point_data_types(mileage, date, hike_id)
     error = false
-    if !is_numeric?(hike_id) || !hike_attempt.success
-      session[:message] = "Error retreiving hike"
-      error = true
-    elsif !is_numeric?(mileage)
+    if !is_numeric?(mileage)
       session[:message] = "Invalid Mileage"
       error = true
     elsif date !~ /[0-9]{4}-[0-9]{2}-[0-9]{2}/
