@@ -3,6 +3,8 @@ require_relative "database_persistence"
 
 # Returns a Status object that will contain correctly formatted objects
 # Or bad status if query/task was unsuccessful
+# NOTE : When ModelManager methods are called, Ownership has already
+#        been checked. (ex : Hike owns given point, user owns given hike, etc.)
 class ModelManager
   @@database = DatabasePersistence.new
 

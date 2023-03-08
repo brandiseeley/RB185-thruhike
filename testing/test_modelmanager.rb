@@ -52,7 +52,8 @@ class ModelManagerTest < MiniTest::Test
     @manager.insert_new_point(Point.new(@second_hike_incomplete, 9.3, Date.new(2023, 1, 13)))
     @manager.insert_new_point(Point.new(@second_hike_incomplete, 4.2, Date.new(2023, 1, 12)))
 
-    @manager.insert_new_goal(@user2, Goal.new(Date.new(2023, 1, 17), 30.0, "Finish Hike", @second_hike_incomplete))
+    @goal1 = Goal.new(Date.new(2023, 1, 17), 30.0, "Finish Hike", @second_hike_incomplete)
+    @manager.insert_new_goal(@user2, @goal1)
   end
 
   def teardown
@@ -186,5 +187,29 @@ class ModelManagerTest < MiniTest::Test
     @manager.update_hike_details(@user1, @incomplete_hike_zero_start, "Incomplete Hike Zero Start", @incomplete_hike_zero_start.start_mileage, 3000.0)
     updated_hike = @manager.one_hike(@incomplete_hike_zero_start.id).data
     assert_equal(3000.0, updated_hike.finish_mileage)  
+  end
+
+  def test_one_goal
+    goal = @manager.one_goal(@second_hike_incomplete, @goal1.id).data
+    assert_equal(@goal1, goal)
+  end
+
+  def test_one_goal_bad
+    goal = @manager.one_goal(@second_hike_incomplete, 32)
+    refute(goal.success)
+  end
+
+  def test_all_goals_from_hike
+    goals = @manager.all_goals_from_hike(@second_hike_incomplete).data
+    assert_equal([@goal1], goals)
+  end
+
+  def test_delete_goal
+    attempt = @manager.delete_goal(@user2, @second_hike_incomplete, @goal1.id)
+    assert(attempt.success)
+
+    non_existant_goal = @manager.one_goal(@second_hike_incomplete, @goal1.id)
+    refute(non_existant_goal.success)
+    assert_equal("Unable to fetch goal", non_existant_goal.message)
   end
 end
