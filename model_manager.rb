@@ -159,16 +159,10 @@ class ModelManager
     delete_attempt.success ? Status.success : Status.failure("There was an error editing this hike")
   end
 
-  def delete_point(user, hike, point_id)
-    validate_attempt = validate_point_to_delete(user, hike, point_id)
-    return validate_attempt unless validate_attempt.success
+  def delete_point(point)
+    delete_attempt = @@database.delete_point(point)
 
-    validity = validate_attempt.data
-    return Status.failure(validity.reason) unless validity.valid
-
-    delete_attempt = @@database.delete_point(point_id)
-
-    delete_attempt.success ? Status.success : Status.failure("There was an error editing this hike")
+    delete_attempt.success ? Status.success : Status.failure("There was an error deleting this point")
   end
 
   def delete_goal(user, hike, goal_id)
@@ -274,22 +268,6 @@ class ModelManager
   # Validation Methods
   # Returns either a Status failure or a Status success with a ValidationResult object as it's data
 
-  def validate_point_to_delete(user, hike, point_id)
-    point_attempt = one_point(hike, point_id)
-    unless point_attempt.success
-      point_attempt.message = "Permission denied, unable to edit hike"
-      return point_attempt
-    end
-
-    # TODO : Check hike owns points earlier 
-    # point = point_attempt.data
-
-    # hike_owns_point_attempt = validate_hike_owns_point(point.hike.id, point_id)
-    # return hike_owns_point_attempt unless hike_owns_point_attempt.success
-
-    Status.success(ValidationResult.valid)
-  end
-
   def validate_edit_hike_details(user, hike, new_hike_name, new_start_mileage, new_finish_mileage)
     unless non_negative?(new_start_mileage, new_finish_mileage)
       return Status.success(ValidationResult.invalid("Mileages must be non-negative"))
@@ -379,20 +357,6 @@ class ModelManager
 
     Status.success(ValidationResult.invalid("You already have a hike titled '#{hike_name}'"))
   end
-
-
-
-  # def validate_hike_owns_point(hike_id, point_id)
-  #   points_attempt = all_points_from_hike(hike_id)
-  #   return points_attempt unless points_attempt.success
-
-  #   points = points_attempt.data
-  #   if points.any? { |point| point.id == point_id.to_i }
-  #     Status.success(ValidationResult.invalid("Permission denied, unable to edit hike"))
-  #   else
-  #     Status.success(ValidationResult.valid)
-  #   end
-  # end
 
   def validate_mileage_confict_with_existing_points(hike, start_mileage, finish_mileage)
     all_points_status = all_points_from_hike(hike)

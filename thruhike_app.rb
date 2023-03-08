@@ -40,7 +40,7 @@ helpers do
   def required_pace(goal, hike, last_point)
     distance_to_go = goal.mileage - last_point.mileage
     days_to_go = goal.date - last_point.date
-    (distance_to_go / days_to_go).round(2)
+    (distance_to_go / days_to_go).round(3)
   end
 end
 
@@ -112,6 +112,19 @@ helpers do
     return if hike.user == user
     session[:message] = "Permission denied, unable to fetch hike"
     redirect "/hikes"
+  end
+
+  def fetch_point_if_exists(hike, point_id)
+    point_attempt = @manager.one_point(hike, point_id)
+    return point_attempt.data if point_attempt.success
+    session[:message] = point_attempt.message
+    redirect back
+  end
+
+  def check_point_ownership(hike, point)
+    return if point.hike == hike
+    session[:message] = "Permission denied, unable to fetch point"
+    redirect back
   end
 end
 
@@ -263,7 +276,6 @@ post "/hikes/:hike_id/points/new" do
   point_id = params["point_id"]
   hike = fetch_hike_if_exists(hike_id)
   check_hike_ownership(user, hike)
-  
 
   date = params[:date]
   mileage = params[:mileage]
@@ -286,9 +298,10 @@ post "/hikes/:hike_id/points/delete" do
   hike = fetch_hike_if_exists(hike_id)
   check_hike_ownership(user, hike)
 
-  point_id = params[:point_id]
+  point = fetch_point_if_exists(hike, params[:point_id])
+  check_point_ownership(hike, point)
 
-  attempt = @manager.delete_point(user, hike, point_id)
+  attempt = @manager.delete_point(point)
   session[:message] = attempt.success ? "Point successfully deleted" : attempt.message
   redirect "/hikes/#{hike_id}"
 end

@@ -80,9 +80,9 @@ class DatabasePersistence
     query(sql, hike.id)
   end
 
-  def delete_point(point_id)
+  def delete_point(point)
     sql = "DELETE FROM points WHERE id = $1"
-    query(sql, point_id)
+    query(sql, point.id)
   end
 
   def delete_goal(goal_id)
