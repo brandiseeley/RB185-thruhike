@@ -46,8 +46,39 @@ class TestData
 
     manager.insert_new_goal(@user2, Goal.new(Date.new(2023, 1, 17), 30.0, "Finish Hike", @second_hike_incomplete))
   end
+
+  def self.fun_stats
+    manager = ModelManager.new
+
+    brandi = User.new("Brandi", "seeleybrandi")
+    manager.insert_new_user(brandi)
+
+    appalachian_trail = Hike.new(brandi, 0.0, 2194.3, "Appalachian Trail")
+    manager.insert_new_hike(appalachian_trail)
+
+    finish = Goal.new(Date.new(2022, 9, 25), 2194.3, "Summit Katahdin", appalachian_trail)
+    harpers_ferry = Goal.new(Date.new(2022, 7, 3), 1032.7, "Harper's Ferry", appalachian_trail)
+    manager.insert_new_goal(brandi, finish)
+    manager.insert_new_goal(brandi, harpers_ferry)
+    manager.insert_new_point(Point.new(appalachian_trail, 8.1, Date.new(2022, 4, 10)))
+    manager.insert_new_point(Point.new(appalachian_trail, 15.7, Date.new(2022, 4, 11)))
+    manager.insert_new_point(Point.new(appalachian_trail, 26.3, Date.new(2022, 4, 12)))
+    manager.insert_new_point(Point.new(appalachian_trail, 32.4, Date.new(2022, 4, 13)))
+    manager.insert_new_point(Point.new(appalachian_trail, 42.8, Date.new(2022, 4, 14)))
+    manager.insert_new_point(Point.new(appalachian_trail, 50.1, Date.new(2022, 4, 15)))
+    manager.insert_new_point(Point.new(appalachian_trail, 50.1, Date.new(2022, 4, 16)))
+    manager.insert_new_point(Point.new(appalachian_trail, 53.4, Date.new(2022, 4, 17)))
+    manager.insert_new_point(Point.new(appalachian_trail, 58.2, Date.new(2022, 4, 18)))
+    manager.insert_new_point(Point.new(appalachian_trail, 62.9, Date.new(2022, 4, 19)))
+    manager.insert_new_point(Point.new(appalachian_trail, 65.6, Date.new(2022, 4, 20)))
+    manager.insert_new_point(Point.new(appalachian_trail, 69.2, Date.new(2022, 4, 21)))
+    manager.insert_new_point(Point.new(appalachian_trail, 73.7, Date.new(2022, 4, 22)))
+    manager.insert_new_point(Point.new(appalachian_trail, 81, Date.new(2022, 4, 23)))
+
+  end
 end
 
 
 TestData.reset_database
 TestData.insert_test_data
+TestData.fun_stats
