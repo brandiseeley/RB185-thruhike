@@ -106,4 +106,11 @@ class Goal
   def <=>(other)
     date <=> other.date
   end
+
+  def ==(other)
+    @date == other.date &&
+    @mileage == other.mileage &&
+    @description == other.description &&
+    @hike == other.hike
+  end
 end
