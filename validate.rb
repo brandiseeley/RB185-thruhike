@@ -39,7 +39,7 @@ module Validate
       session[:message] = "Invalid Date"
       error = true
     elsif description.strip.empty?
-      sesssion[:message] = "Invalid Description, must contain characters"
+      session[:message] = "Invalid Description, must contain characters"
       error = true
     end
     redirect "/hikes/#{hike_id}" if error

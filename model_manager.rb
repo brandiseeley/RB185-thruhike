@@ -321,6 +321,10 @@ class ModelManager
   end
 
   def validate_goal_details(goal, hike)
+    unless (hike.start_mileage..hike.finish_mileage).cover?(goal.mileage)
+      return Status.success(ValidationResult.invalid("Goal mile mark must be within range of hike"))
+    end
+
     unless non_negative?(goal.mileage)
       return Status.success(ValidationResult.invalid("Mileage must be non-negative"))
     end

@@ -23,6 +23,10 @@ class AppTest < Minitest::Test
     { "rack.session" => { user_id: "2" } }
   end
 
+  def log_in_user_1
+    { "rack.session" => { user_id: "1" } }
+  end
+
   def new_hike_params
     { "name" => "Long Walk",
       "start_mileage" => "0",
@@ -72,7 +76,8 @@ class AppTest < Minitest::Test
     @manager.insert_new_point(Point.new(@second_hike_incomplete, 9.3, Date.new(2023, 1, 13)))
     @manager.insert_new_point(Point.new(@second_hike_incomplete, 4.2, Date.new(2023, 1, 12)))
 
-    @manager.insert_new_goal(@user2, Goal.new(Date.new(2023, 1, 17), 30.0, "Finish Hike", @second_hike_incomplete))
+    @goal1 = Goal.new(Date.new(2023, 1, 17), 30.0, "Finish Hike", @second_hike_incomplete)
+    @manager.insert_new_goal(@user2, @goal1)
   end
 
   def teardown
@@ -390,6 +395,80 @@ class AppTest < Minitest::Test
     assert_equal(302, last_response.status)
     assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
     assert_equal("Unable to fetch point", session[:message])
+  end
+  
+  def test_create_goal
+    post "/hikes/1/goals/new", { "date" => "2022-06-20", "description" => "800 Mile mark", "mileage" => "800.0"}, log_in_user_1
+    assert_equal(302, last_response.status)
+    assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
+    assert_equal("Goal successfully created", session[:message])
+
+    follow_redirect!
+    assert_includes(last_response.body, "800 Mile mark")
+  end
+  
+  def test_create_goal_out_of_range
+    post "/hikes/1/goals/new", { "date" => "2022-06-20", "description" => "Out of range goal", "mileage" => "8000.0"}, log_in_user_1
+    assert_equal(302, last_response.status)
+    assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
+    assert_equal("Goal mile mark must be within range of hike", session[:message])
+  
+    follow_redirect!
+    refute_includes(last_response.body, "Out of range goal")
+  end
+  
+  def test_create_goal_bad_date
+    post "/hikes/1/goals/new", { "date" => 42, "description" => "800 Mile mark", "mileage" => "800.0"}, log_in_user_1
+    assert_equal(302, last_response.status)
+    assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
+    assert_equal("Invalid Date", session[:message])
+  
+    follow_redirect!
+    refute_includes(last_response.body, "800 Mile mark")
+  end
+  
+  def test_create_goal_bad_mileage
+    post "/hikes/1/goals/new", { "date" => "2022-06-20", "description" => "800 Mile mark", "mileage" => "foo"}, log_in_user_1
+    assert_equal(302, last_response.status)
+    assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
+    assert_equal("Invalid Mileage", session[:message])
+  
+    follow_redirect!
+    refute_includes(last_response.body, "800 Mile mark")
+  end
+  
+  def test_create_goal_empty_description
+    post "/hikes/1/goals/new", { "date" => "2022-06-20", "description" => "   ", "mileage" => "800.0"}, log_in_user_1
+    assert_equal(302, last_response.status)
+    assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
+    assert_equal("Invalid Description, must contain characters", session[:message])
+  
+    follow_redirect!
+    refute_includes(last_response.body, "2022-06-20")
+  end
+  
+  def test_delete_goal
+    post "/hikes/3/goals/delete", { "goal_id" => @goal1.id }, log_in_user_2
+    assert_equal(302, last_response.status)
+    assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
+    assert_equal("Goal successfully deleted", session[:message])
+  
+    follow_redirect!
+    refute_includes(last_response.body, "Finish Hike")
+  end
+  
+  def test_delete_non_existant_goal
+    post "/hikes/3/goals/delete", { "goal_id" => 42 }, log_in_user_2
+    assert_equal(302, last_response.status)
+    assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
+    assert_equal("Unable to fetch goal", session[:message])
+  end
+  
+  def test_delete_goal_other_user
+    post "/hikes/3/goals/delete", { "goal_id" => @goal1.id }, log_in_user_1
+    assert_equal(302, last_response.status)
+    assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
+    assert_equal("Permission denied, unable to fetch hike", session[:message])
   end
   
   # Test editing Hike

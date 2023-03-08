@@ -336,7 +336,7 @@ post "/hikes/:hike_id/goals/new" do
   goal = Goal.new(date, mileage, description, hike)
   attempt = @manager.insert_new_goal(user, goal)
 
-  session[:message] = attempt.success ? "Goal successfully created" : status.message
+  session[:message] = attempt.success ? "Goal successfully created" : attempt.message
   redirect "/hikes/#{hike_id}"
 end
 
