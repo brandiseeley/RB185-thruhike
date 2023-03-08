@@ -105,13 +105,13 @@ helpers do
     hike_attempt = @manager.one_hike(hike_id)
     return hike_attempt.data if hike_attempt.success
     session[:message] = hike_attempt.message
-    redirect "/hikes"
+    redirect back
   end
 
   def check_hike_ownership(user, hike)
     return if hike.user == user
     session[:message] = "Permission denied, unable to fetch hike"
-    redirect "/hikes"
+    redirect back
   end
 
   def fetch_point_if_exists(hike, point_id)
@@ -126,13 +126,24 @@ helpers do
     session[:message] = "Permission denied, unable to fetch point"
     redirect back
   end
+
+  def fetch_goal_if_exists(hike, goal_id)
+    goal_attempt = @manager.one_goal(hike, goal_id)
+    return goal_attempt.data if goal_attempt.success
+    session[:message] = goal_attempt.message
+    redirect back
+  end
+
+  def check_goal_ownership(hike, goal)
+    return if hike == goal.hike
+    session[:message] = "Permission denied, unable to fetch goal"
+    redirect back
+  end
 end
 
 # Routes
 
 get "/" do
-  all_users_attempt = @manager.all_users
-  @users = all_users_attempt.success ? all_users_attempt.data : []
   erb :home
 end
 
@@ -273,7 +284,6 @@ post "/hikes/:hike_id/points/new" do
 
   user = logged_in_user
   hike_id = params["hike_id"]
-  point_id = params["point_id"]
   hike = fetch_hike_if_exists(hike_id)
   check_hike_ownership(user, hike)
 
@@ -306,10 +316,10 @@ post "/hikes/:hike_id/points/delete" do
   redirect "/hikes/#{hike_id}"
 end
 
-post "/hikes/:hike_id/new_goal" do
+post "/hikes/:hike_id/goals/new" do
   require_login unless logged_in?
   user = logged_in_user
-  hike_id = params[:hike_id].to_i
+  hike_id = params[:hike_id]
   hike = fetch_hike_if_exists(hike_id)
   check_hike_ownership(user, hike)
 
@@ -330,14 +340,16 @@ post "/hikes/:hike_id/new_goal" do
   redirect "/hikes/#{hike_id}"
 end
 
-post "/hikes/:hike_id/delete_goal" do
+post "/hikes/:hike_id/goals/delete" do
   require_login unless logged_in?
   user = logged_in_user
   hike_id = params[:hike_id]
+  goal_id = params[:goal_id]
   hike = fetch_hike_if_exists(hike_id)
   check_hike_ownership(user, hike)
 
-  # TODO : Validate user owns hike
+  goal = fetch_goal_if_exists(hike, goal_id)
+  check_goal_ownership(hike, goal)
 
   goal_id = params[:goal_id].to_i
 

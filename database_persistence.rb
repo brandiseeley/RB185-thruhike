@@ -139,10 +139,6 @@ class DatabasePersistence
     query(sql, hike.id)
   end
 
-  def all_users
-    query("SELECT * FROM users;")
-  end
-
   def one_user(user_id)
     sql = "SELECT * FROM users WHERE id = $1"
     query(sql, user_id)
@@ -166,6 +162,11 @@ class DatabasePersistence
   def one_point(point_id)
     sql = "SELECT * FROM points WHERE id = $1"
     query(sql, point_id)
+  end
+
+  def one_goal(goal_id)
+    sql = "SELECT * FROM goals WHERE id = $1"
+    query(sql, goal_id)
   end
 
   def all_goals_from_hike(hike)

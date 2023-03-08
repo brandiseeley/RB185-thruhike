@@ -109,7 +109,7 @@
                 <%= required_pace(goal, @hike, @points.first) %></td>
               <% end %>
             <td>            
-              <form action="/hikes/<%= @hike.id %>/delete_goal" method="POST">
+              <form action="/hikes/<%= @hike.id %>/goals/delete" method="POST">
                 <button name="goal_id" value="<%= goal.id %>">Delete Goal</button>
               </form>
             </td>
@@ -121,7 +121,7 @@
 
   <section class="goal-form">
     <h2>New Goal</h2>
-    <form action="/hikes/<%= @hike.id %>/new_goal" method="POST">
+    <form action="/hikes/<%= @hike.id %>/goals/new" method="POST">
       <label for="date">Desired Arrival: </label>
       <input type="date" name="date" required>
 

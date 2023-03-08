@@ -101,7 +101,7 @@ class ModelManagerTest < MiniTest::Test
     assert_equal(10.0, status.data)
 
     point = @manager.one_point(@complete_hike_non_zero_start, 12).data
-    
+
     @manager.delete_point(point)
     status = @manager.average_mileage_per_day(@complete_hike_non_zero_start)
     assert_equal(9.47, status.data)
@@ -137,12 +137,6 @@ class ModelManagerTest < MiniTest::Test
     
     status = @manager.mileage_from_finish(@incomplete_hike_zero_start)
     assert_equal(2151.5, status.data)
-  end
-
-  def test_all_users
-    constructed_users = @manager.all_users.data
-    manual_users = [@user1, @user2].sort
-    assert_equal(manual_users, constructed_users)
   end
 
   def test_one_user

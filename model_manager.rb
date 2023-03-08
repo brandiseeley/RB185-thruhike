@@ -18,17 +18,6 @@ class ModelManager
     Status.success(construct_user(attempt.data.first))
   end
 
-  def all_users
-    attempt = @@database.all_users
-    return Status.failure("Unable to fetch users") unless attempt.success
-
-    users = attempt.data.map do |user_data|
-      construct_user(user_data)
-    end.sort
-
-    Status.success(users)
-  end
-
   def one_hike(hike_id)
     attempt = @@database.one_hike(hike_id)
 
@@ -72,12 +61,22 @@ class ModelManager
     Status.success(points)
   end
 
+  def one_goal(hike, goal_id)
+    goal_attempt = @@database.one_goal(goal_id)
+    return goal_attempt unless goal_attempt.success
+
+    return Status.failure("Unable to fetch goal") unless goal_attempt.data.ntuples.positive?
+
+    goal = construct_goal(hike, goal_attempt.data.first)
+    Status.success(goal)
+  end
+
   def all_goals_from_hike(hike)
     goals_attempt = @@database.all_goals_from_hike(hike)
     return goals_attempt unless goals_attempt.success
 
     goals = goals_attempt.data.map do |goal_data|
-      construct_goal(goal_data)
+      construct_goal(hike, goal_data)
     end.sort
 
     Status.success(goals)
@@ -253,11 +252,11 @@ class ModelManager
               row["id"].to_i)
   end
 
-  def construct_goal(row)
+  def construct_goal(hike, row)
     Goal.new(Date.parse(row["date"]).to_date,
              row["mileage"].to_f,
              row["description"],
-             row["hike_id"].to_i,
+             hike,
              row["id"].to_i)
   end
 
