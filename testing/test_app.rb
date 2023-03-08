@@ -389,7 +389,7 @@ class AppTest < Minitest::Test
     post "/hikes/3/points/delete", { "point_id" => "42" }, log_in_user_2
     assert_equal(302, last_response.status)
     assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
-    assert_equal("Permission denied, unable to edit hike", session[:message])
+    assert_equal("Unable to fetch point", session[:message])
   end
   
   # Test editing Hike

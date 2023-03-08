@@ -99,8 +99,10 @@ class ModelManagerTest < MiniTest::Test
   def test_average_mileage_per_day_non_zero_start
     status = @manager.average_mileage_per_day(@complete_hike_non_zero_start)
     assert_equal(10.0, status.data)
+
+    point = @manager.one_point(@complete_hike_non_zero_start, 12).data
     
-    @manager.delete_point(@user2, @complete_hike_non_zero_start, 12)
+    @manager.delete_point(point)
     status = @manager.average_mileage_per_day(@complete_hike_non_zero_start)
     assert_equal(9.47, status.data)
   end
