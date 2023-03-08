@@ -52,7 +52,7 @@ class ModelManagerTest < MiniTest::Test
     @manager.insert_new_point(Point.new(@second_hike_incomplete, 9.3, Date.new(2023, 1, 13)))
     @manager.insert_new_point(Point.new(@second_hike_incomplete, 4.2, Date.new(2023, 1, 12)))
 
-    @manager.insert_new_goal(Goal.new(Date.new(2023, 1, 17), 30.0, "Finish Hike", @second_hike_incomplete.id), @user2)
+    @manager.insert_new_goal(@user2, Goal.new(Date.new(2023, 1, 17), 30.0, "Finish Hike", @second_hike_incomplete))
   end
 
   def teardown
@@ -73,7 +73,7 @@ class ModelManagerTest < MiniTest::Test
 
     status = @manager.insert_new_point(point)
     assert_equal(false, status.success)
-    assert_includes(status.message, "Unable to fetch hike")
+    assert_includes(status.message, "Unable to create new point")
   end
   
   def test_adding_hike_to_nonexistant_user
@@ -100,7 +100,7 @@ class ModelManagerTest < MiniTest::Test
     status = @manager.average_mileage_per_day(@complete_hike_non_zero_start)
     assert_equal(10.0, status.data)
     
-    @manager.delete_point(@user2, 12)
+    @manager.delete_point(@user2, @complete_hike_non_zero_start, 12)
     status = @manager.average_mileage_per_day(@complete_hike_non_zero_start)
     assert_equal(9.47, status.data)
   end
@@ -169,25 +169,25 @@ class ModelManagerTest < MiniTest::Test
           Point.new(@incomplete_hike_zero_start, 8.1, Date.new(2022, 4, 10)),
           Point.new(@incomplete_hike_zero_start, 15.7, Date.new(2022, 4, 11))
     ].sort
-    constructed_points = @manager.all_points_from_hike(1).data
+    constructed_points = @manager.all_points_from_hike(@incomplete_hike_zero_start).data
 
     assert_equal(manual_points, constructed_points)
   end
 
   def test_update_hike_name
-    @manager.update_hike_details(@user1, @incomplete_hike_zero_start.id, "A walk about", @incomplete_hike_zero_start.start_mileage, @incomplete_hike_zero_start.finish_mileage)
+    @manager.update_hike_details(@user1, @incomplete_hike_zero_start, "A walk about", @incomplete_hike_zero_start.start_mileage, @incomplete_hike_zero_start.finish_mileage)
     updated_hike = @manager.one_hike(@incomplete_hike_zero_start.id).data
     assert_equal("A walk about", updated_hike.name)
   end
 
   def test_update_hike_start_mileage
-    @manager.update_hike_details(@user1, @incomplete_hike_zero_start.id, "Incomplete Hike Zero Start", 7.9, @incomplete_hike_zero_start.finish_mileage)
+    @manager.update_hike_details(@user1, @incomplete_hike_zero_start, "Incomplete Hike Zero Start", 7.9, @incomplete_hike_zero_start.finish_mileage)
     updated_hike = @manager.one_hike(@incomplete_hike_zero_start.id).data
     assert_equal(7.9, updated_hike.start_mileage)
   end
 
   def test_update_hike_finish_mileage
-    @manager.update_hike_details(@user1, @incomplete_hike_zero_start.id, "Incomplete Hike Zero Start", @incomplete_hike_zero_start.start_mileage, 3000.0)
+    @manager.update_hike_details(@user1, @incomplete_hike_zero_start, "Incomplete Hike Zero Start", @incomplete_hike_zero_start.start_mileage, 3000.0)
     updated_hike = @manager.one_hike(@incomplete_hike_zero_start.id).data
     assert_equal(3000.0, updated_hike.finish_mileage)  
   end

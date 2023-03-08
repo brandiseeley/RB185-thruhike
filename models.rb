@@ -92,14 +92,14 @@ class User
 end
 
 class Goal
-  attr_reader :date, :mileage, :description, :hike_id
+  attr_reader :date, :mileage, :description, :hike
   attr_accessor :id
 
-  def initialize(date, mileage, description, hike_id, id = nil)
+  def initialize(date, mileage, description, hike, id = nil)
     @date = date
     @mileage = mileage
     @description = description
-    @hike_id = hike_id
+    @hike = hike
     @id = id
   end
 

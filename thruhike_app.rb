@@ -218,7 +218,7 @@ post "/hikes/delete" do
   hike = fetch_hike_if_exists(hike_id)
   check_hike_ownership(user, hike)
 
-  status = @manager.delete_hike(hike_id, user)
+  status = @manager.delete_hike(hike, user)
 
   session[:message] = status.success ? "Hike successfully deleted" : status.message
   redirect "/hikes"
@@ -234,13 +234,13 @@ get "/hikes/:hike_id" do
 
   # TODO : Validate user owns hike
   
-  points_attempt = @manager.all_points_from_hike(hike_id)
+  points_attempt = @manager.all_points_from_hike(@hike)
   unless points_attempt.success
     session[:message] = points_attempt.message
     redirect "/hikes"
   end
 
-  goals_attempt = @manager.all_goals_from_hike(hike_id)
+  goals_attempt = @manager.all_goals_from_hike(@hike)
   unless goals_attempt.success
     session[:message] = goals_attempt.message
     redirect "/hikes"
@@ -288,7 +288,7 @@ post "/hikes/:hike_id/points/delete" do
 
   point_id = params[:point_id]
 
-  attempt = @manager.delete_point(user, point_id)
+  attempt = @manager.delete_point(user, hike, point_id)
   session[:message] = attempt.success ? "Point successfully deleted" : attempt.message
   redirect "/hikes/#{hike_id}"
 end
@@ -310,8 +310,8 @@ post "/hikes/:hike_id/new_goal" do
   description = description.strip
   mileage = mileage.to_f
 
-  goal = Goal.new(date, mileage, description, hike_id)
-  attempt = @manager.insert_new_goal(goal, user)
+  goal = Goal.new(date, mileage, description, hike)
+  attempt = @manager.insert_new_goal(user, goal)
 
   session[:message] = attempt.success ? "Goal successfully created" : status.message
   redirect "/hikes/#{hike_id}"
@@ -328,8 +328,7 @@ post "/hikes/:hike_id/delete_goal" do
 
   goal_id = params[:goal_id].to_i
 
-  # binding.pry
-  attempt = @manager.delete_goal(user, hike_id, goal_id)
+  attempt = @manager.delete_goal(user, hike, goal_id)
   session[:message] = attempt.success ? "Goal successfully deleted" : attempt.message
   redirect "/hikes/#{hike_id}"
 end
@@ -349,8 +348,8 @@ post "/hikes/:hike_id/edit" do
   require_login unless logged_in?
   user = logged_in_user
   hike_id = params[:hike_id].to_i
-  @hike = fetch_hike_if_exists(hike_id)
-  check_hike_ownership(user, @hike)
+  hike = fetch_hike_if_exists(hike_id)
+  check_hike_ownership(user, hike)
 
 
   new_hike_name = params["name"]
@@ -358,7 +357,7 @@ post "/hikes/:hike_id/edit" do
   new_finish_mileage = params["finish_mileage"]
   validate_hike_data_types(new_hike_name, new_start_mileage, new_finish_mileage)
 
-  status = @manager.update_hike_details(user, hike_id, new_hike_name, new_start_mileage, new_finish_mileage)
+  status = @manager.update_hike_details(user, hike, new_hike_name, new_start_mileage, new_finish_mileage)
 
   session[:message] = status.success ? "Hike successfully edited" : status.message
   redirect "/hikes/#{hike_id}/edit" unless status.success

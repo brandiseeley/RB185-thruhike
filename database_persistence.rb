@@ -72,12 +72,12 @@ class DatabasePersistence
             RETURNING id;
     SQL
 
-    query(sql, goal.hike_id, goal.mileage, goal.description, goal.date)
+    query(sql, goal.hike.id, goal.mileage, goal.description, goal.date)
   end
 
-  def delete_hike(hike_id)
+  def delete_hike(hike)
     sql = "DELETE FROM hikes WHERE id = $1"
-    query(sql, hike_id)
+    query(sql, hike.id)
   end
 
   def delete_point(point_id)
@@ -90,23 +90,23 @@ class DatabasePersistence
     query(sql, goal_id)
   end
 
-  def update_hike_name(hike_id, new_name)
+  def update_hike_name(hike, new_name)
     sql = "UPDATE hikes SET name = $1 WHERE id = $2"
-    query(sql, new_name, hike_id)
+    query(sql, new_name, hike.id)
   end
 
-  def update_hike_start_mileage(hike_id, new_start_mileage)
+  def update_hike_start_mileage(hike, new_start_mileage)
     sql = "UPDATE hikes SET start_mileage = $1 WHERE id = $2"
-    query(sql, new_start_mileage, hike_id)
+    query(sql, new_start_mileage, hike.id)
   end
 
-  def update_hike_finish_mileage(hike_id, new_finish_mileage)
+  def update_hike_finish_mileage(hike, new_finish_mileage)
     sql = "UPDATE hikes SET finish_mileage = $1 WHERE id = $2"
-    query(sql, new_finish_mileage, hike_id)
+    query(sql, new_finish_mileage, hike.id)
   end
 
   def average_mileage_per_day(hike)
-    points_attempt = all_points_from_hike(hike.id)
+    points_attempt = all_points_from_hike(hike)
     return points_attempt unless points_attempt.success
 
     return query("SELECT 0.0") if points_attempt.data.ntuples.zero?
@@ -158,9 +158,9 @@ class DatabasePersistence
     query(sql, hike_id)
   end
 
-  def all_points_from_hike(hike_id)
+  def all_points_from_hike(hike)
     sql = "SELECT * FROM points WHERE hike_id = $1"
-    query(sql, hike_id)
+    query(sql, hike.id)
   end
 
   def one_point(point_id)
@@ -168,9 +168,9 @@ class DatabasePersistence
     query(sql, point_id)
   end
 
-  def all_goals_from_hike(hike_id)
+  def all_goals_from_hike(hike)
     sql = "SELECT * FROM goals WHERE hike_id = $1"
-    query(sql, hike_id)
+    query(sql, hike.id)
   end
 
   def id_from_user_name(user_name)

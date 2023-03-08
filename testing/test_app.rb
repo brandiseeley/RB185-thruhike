@@ -72,7 +72,7 @@ class AppTest < Minitest::Test
     @manager.insert_new_point(Point.new(@second_hike_incomplete, 9.3, Date.new(2023, 1, 13)))
     @manager.insert_new_point(Point.new(@second_hike_incomplete, 4.2, Date.new(2023, 1, 12)))
 
-    @manager.insert_new_goal(Goal.new(Date.new(2023, 1, 17), 30.0, "Finish Hike", @second_hike_incomplete.id), @user2)
+    @manager.insert_new_goal(@user2, Goal.new(Date.new(2023, 1, 17), 30.0, "Finish Hike", @second_hike_incomplete))
   end
 
   def teardown
@@ -373,7 +373,7 @@ class AppTest < Minitest::Test
     
     follow_redirect!
     refute_includes(last_response.body, "2023-01-13")
-    refute(@manager.one_point("13").success)
+    refute(@manager.one_point(@second_hike_incomplete, "13").success)
   end
   
   def test_delete_point_other_users_hike
@@ -382,7 +382,7 @@ class AppTest < Minitest::Test
     assert_equal("text/html;charset=utf-8", last_response["Content-Type"])
     assert_equal("Permission denied, unable to fetch hike", session[:message])
 
-    assert(@manager.one_point("13").success)
+    assert(@manager.one_point(@incomplete_hike_zero_start, "13").success)
   end
   
   def test_delete_non_existent_point
